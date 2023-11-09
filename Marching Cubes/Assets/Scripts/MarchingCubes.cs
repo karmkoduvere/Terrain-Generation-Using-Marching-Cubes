@@ -1,11 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class MarchingCubes : MonoBehaviour
 {
-    public Vector3 Chunks;
+    public static MarchingCubes Instance;
+    
+    [FormerlySerializedAs("Chunks")] public Vector3 ChunksAmount;
     public int ChunkSize;
     [Range(0f, 1f)]
     public float PerlinDensity;
@@ -14,6 +18,7 @@ public class MarchingCubes : MonoBehaviour
 
     public GameObject ChunkPrefab;
     public GameObject Marker;
+    public NoiseGenerator NoiseGenerator = NoiseGenerator.PerlinNoise3D;
 
     private float[][][] noisePoints;
 
@@ -32,29 +37,41 @@ public class MarchingCubes : MonoBehaviour
         new Vector3(0,1,0.5f)
     };
 
-    void Start()
+    private void Awake()
     {
+        Instance = this;
+    }
+
+    public void Start()
+    {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Destroy(transform.GetChild(i).gameObject);
+        }
         Generate();
     }
 
     void Generate()
     {
-        int lenght = ChunkSize * (int)Chunks.x + 1;
-        int height = ChunkSize * (int)Chunks.y + 1;
-        int depth = ChunkSize * (int)Chunks.z + 1;
+        int lenght = ChunkSize * (int)ChunksAmount.x + 1;
+        int height = ChunkSize * (int)ChunksAmount.y + 1;
+        int depth = ChunkSize * (int)ChunksAmount.z + 1;
         noisePoints = CreatePoints(lenght, height, depth);
 
-        for (int z = 0; z < Chunks.z; z++)
+        GameObject chunksParent = new GameObject("ChunksParent");
+        chunksParent.transform.parent = transform;
+
+        for (int z = 0; z < ChunksAmount.z; z++)
         {
-            for (int y = 0; y < Chunks.y; y++)
+            for (int y = 0; y < ChunksAmount.y; y++)
             {
-                for (int x = 0; x < Chunks.x; x++)
+                for (int x = 0; x < ChunksAmount.x; x++)
                 {
                     GameObject chunk = Instantiate(
                         ChunkPrefab,
                         new Vector3(x * ChunkSize, y * ChunkSize, z * ChunkSize),
                         Quaternion.identity,
-                        transform
+                        chunksParent.transform
                         );
                     GenerateChunk(new Vector3(x,y,z), chunk);
                 }
@@ -129,15 +146,36 @@ public class MarchingCubes : MonoBehaviour
                 points[z][y] = new float[lenght];
                 for (int x = 0; x < lenght; x++)
                 {
-                    if (z == 0 || y == 0 || x == 0 || z + 1 == depth || y + 1 == height || x + 1 == lenght) points[z][y][x] = 0;
-                    else points[z][y][x] = PerlinNoise3D(x,y,z);
+                    if (z == 0 || y == 0 || x == 0 || z + 1 == depth || y + 1 == height || x + 1 == lenght) 
+                        points[z][y][x] = 0;
+                    else
+                    {
+                        if (NoiseGenerator == NoiseGenerator.PerlinNoise3D)
+                        {
+                            points[z][y][x] = PerlinNoise3D(x,y,z);
+                        } else if (NoiseGenerator == NoiseGenerator.PerlinNoise2D)
+                        {
+                            points[z][y][x] = PerlinNoise2D(x, y, z);
+                        }
+                    } 
                 }
             }
         }
         return points;
     }
 
-    
+    private float PerlinNoise2D(float x, float y, float z)
+    {
+        int height = ChunkSize * (int)ChunksAmount.y + 1;
+        x *= PerlinDensity;
+        z *= PerlinDensity;
+        float xzPerlinHeight = Mathf.PerlinNoise(x, z);
+        if (height * xzPerlinHeight > y)
+            return 1;
+        return 0;
+    }
+
+
     float PerlinNoise3D(float x, float y, float z)
     {
         x *= PerlinDensity;
