@@ -19,6 +19,7 @@ public class MarchingCubes : MonoBehaviour
     public GameObject ChunkPrefab;
     public GameObject Marker;
     public NoiseGenerator NoiseGenerator = NoiseGenerator.PerlinNoise3D;
+    public Material material;
 
     private float[][][] noisePoints;
 
@@ -43,6 +44,16 @@ public class MarchingCubes : MonoBehaviour
     }
 
     public void Start()
+    {
+        Refresh();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown("r")) Refresh();
+    }
+
+    void Refresh()
     {
         for (int i = 0; i < transform.childCount; i++)
         {
@@ -84,6 +95,7 @@ public class MarchingCubes : MonoBehaviour
     {
         Vector3[] newVertices = new Vector3[12 * ChunkSize * ChunkSize * ChunkSize];
         int[] newTriangles = new int[12 * ChunkSize * ChunkSize * ChunkSize];
+        Color[] colors = new Color[12 * ChunkSize * ChunkSize * ChunkSize];
 
         // "Marches" over the chunk, at every point gets TriangeTable index based on
         // the generated points and then adds new vertices and triangles to the list.
@@ -100,6 +112,12 @@ public class MarchingCubes : MonoBehaviour
                         if (el == -1) break;
                         newVertices[step] = new Vector3(x,y,z) + cubeEdgeOffset[el];
                         newTriangles[step] = step;
+                        // Map x,y,z positions/offsets to 0-1
+                        float colorValueX = (float)((x * 0.1 + offset.x) / (ChunkSize * 0.1 + ChunkSize));
+                        float colorValueY = (float)((y * 0.1 + offset.y) / (ChunkSize * 0.1 + ChunkSize));
+                        float colorValueZ = (float)((z * 0.1 + offset.z) / (ChunkSize * 0.1 + ChunkSize));
+
+                        colors[step] = Color.HSVToRGB(colorValueX/2 + colorValueZ/2, colorValueY * 1/3 + 0.25f, colorValueY);
                         step++;
                     }
                 }
@@ -109,8 +127,11 @@ public class MarchingCubes : MonoBehaviour
         Mesh mesh = new Mesh();
         mesh.vertices = newVertices;
         mesh.triangles = newTriangles;
+        mesh.colors = colors;
         mesh.RecalculateNormals();
         chunk.GetComponent<MeshFilter>().mesh = mesh;
+        //chunk.AddComponent<MeshCollider>().sharedMesh = mesh; // Collision
+        chunk.GetComponent<MeshRenderer>().material = material;
         //mesh.RecalculateBounds();
         //mesh.Optimize();
     }
