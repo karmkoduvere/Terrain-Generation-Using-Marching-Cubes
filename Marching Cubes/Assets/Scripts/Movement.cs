@@ -7,12 +7,14 @@ public class Movement : MonoBehaviour
 {
     public float moveSpeed = 10.0f;      // Camera movement speed.
     public float rotationSpeed = 2.0f;  // Camera rotation speed.
+    
     private float rotationX = 0.0f;
     // Left rigidbody stuff here incase we want to try having collision with generated mesh
     //private Rigidbody _rb;
 
     private void Start()
     {
+        Cursor.lockState = CursorLockMode.Confined;
         //_rb = GetComponent<Rigidbody>();
     }
     void Update()
@@ -33,12 +35,11 @@ public class Movement : MonoBehaviour
 
         // Camera Rotation
         float rotateHorizontal = Input.GetAxis("Mouse X");
-        float rotateVertical = -Input.GetAxis("Mouse Y"); // Invert vertical input if necessary
+        float rotateVertical = -Input.GetAxis("Mouse Y"); 
+        transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y + rotateHorizontal * rotationSpeed, 0);
 
-        rotationX += rotateVertical * rotationSpeed;
-        rotationX = Mathf.Clamp(rotationX, -90.0f, 90.0f); // Limit vertical rotation to avoid camera flipping
-
-        transform.rotation = Quaternion.Euler(rotationX, transform.rotation.eulerAngles.y + rotateHorizontal * rotationSpeed, 0);
+        rotationX = Mathf.Clamp(rotationX + rotateVertical * rotationSpeed, -90.0f, 90.0f); // Limit vertical rotation to avoid camera flipping
+        Camera.main.transform.rotation = Quaternion.Euler(rotationX, transform.rotation.eulerAngles.y + rotateHorizontal * rotationSpeed, 0);
         }
     }
     /*
