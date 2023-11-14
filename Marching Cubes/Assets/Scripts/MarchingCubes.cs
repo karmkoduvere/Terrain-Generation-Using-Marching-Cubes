@@ -2,15 +2,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DefaultNamespace;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.UIElements;
 
 public class MarchingCubes : MonoBehaviour
 {
     public static MarchingCubes Instance;
     
     [FormerlySerializedAs("Chunks")] public Vector3 ChunksAmount;
-    public int ChunkSize = 27; // Optimal chunk size 
+    public int ChunkSize = 27;
     [Range(0f, 1f)]
     public float PerlinDensity;
     [Range(0f, 1f)]
@@ -22,21 +24,6 @@ public class MarchingCubes : MonoBehaviour
     public Material material;
 
     private float[][][] noisePoints;
-
-    Vector3[] cubeEdgeOffset = {
-        new Vector3(0.5f,0,0),
-        new Vector3(1,0.5f,0),
-        new Vector3(0.5f,1,0),
-        new Vector3(0,0.5f,0),
-        new Vector3(0.5f,0,1),
-        new Vector3(1,0.5f,1),
-        new Vector3(0.5f,1,1),
-        new Vector3(0,0.5f,1),
-        new Vector3(0,0,0.5f),
-        new Vector3(1,0,0.5f),
-        new Vector3(1,1,0.5f),
-        new Vector3(0,1,0.5f)
-    };
 
     private void Awake()
     {
@@ -91,89 +78,17 @@ public class MarchingCubes : MonoBehaviour
 
     }
 
-    float CalcOffset(int x, int y, int z, Vector3 offset, int n)
-    {
-        x += ChunkSize * (int)offset.x;
-        y += ChunkSize * (int)offset.y;
-        z += ChunkSize * (int)offset.z;
-        if (false)
-        {
-            Debug.Log("x: " + x);
-            Debug.Log("y: " + y);
-            Debug.Log("z: " + z);
-            Debug.Log("noisePoints: " + noisePoints[z][y][x]);
-            switch (n)
-            {
-                case 0:
-                    Debug.Log("noisePoints x : " + noisePoints[z][y][x + 1]);
-                    break;
-                case 1:
-                    Debug.Log("noisePoints y: " + noisePoints[z][y + 1][x]);
-                    break;
-                case 2:
-                    Debug.Log("noisePoints z: " + noisePoints[z + 1][y][x]);
-                    break;
-            }
-            Debug.Log("");
-        }
-        
-        float o;
-        if (n == 0) o = (NoiseCutOff - noisePoints[z][y][x]) / (noisePoints[z][y][x + 1] - noisePoints[z][y][x]);
-        else if (n == 1) o = (NoiseCutOff - noisePoints[z][y][x]) / (noisePoints[z][y + 1][x] - noisePoints[z][y][x]);
-        else if (n == 2) o = (NoiseCutOff - noisePoints[z][y][x]) / (noisePoints[z + 1][y][x] - noisePoints[z][y][x]);
-        else o = 0.5f;
-        
-        if (o <= 0 || o == float.PositiveInfinity) return 0.5f;
-        else return o;
-    }
-
     public void GenerateChunkSmooth(Vector3 offset, GameObject chunk)
     {
-        //List<Vector3> newVertices = new List<Vector3>();
-        //List<int> newTriangles = new List<int>();
         List<Vector3> newVertices = new();
-        Dictionary<Vector3, int> verticeMap = new();
         List<int> newTriangles = new();
         List<Color> colors = new();
 
-        int step = 0;
-        for (int z = 0; z < ChunkSize + 1; z++)
-        {
-            for (int y = 0; y < ChunkSize + 1; y++)
-            {
-                for (int x = 0; x < ChunkSize + 1; x++)
-                {
-                    float colorValueX = (float)(x + ChunkSize * offset.x) / (ChunksAmount.x * ChunkSize);
-                    float colorValueY = (float)(y + ChunkSize * offset.y) / (ChunksAmount.y * ChunkSize);
-                    float colorValueZ = (float)(z + ChunkSize * offset.z) / (ChunksAmount.z * ChunkSize);
-                    if (x != ChunkSize)
-                    {
-                        Vector3 vertexX = new Vector3(x + CalcOffset(x, y, z, offset, 0), y, z);
-                        newVertices.Add(vertexX);
-                        verticeMap[new Vector3(x + 0.5f, y, z)] = step++;
-
-                        colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
-                    }
-                    if (y != ChunkSize)
-                    {
-                        Vector3 vertexY = new Vector3(x, y + CalcOffset(x, y, z, offset, 1), z);
-                        newVertices.Add(vertexY);
-                        verticeMap[new Vector3(x , y + 0.5f, z)] = step++;
-                        colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
-                    }
-                    if (z != ChunkSize)
-                    {
-                        Vector3 vertexZ = new Vector3(x, y, z + CalcOffset(x, y, z, offset, 2));
-                        newVertices.Add(vertexZ);
-                        verticeMap[new Vector3(x, y, z + 0.5f)] = step++;
-                        colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
-                    }
-                }
-            }
-        }
+        Dictionary<Vector3, int> verticeMap = new();
 
         // "Marches" over the chunk, at every point gets TriangeTable index based on
         // the generated points and then adds new vertices and triangles to the list.
+        int step = 0;
         for (int z = 0; z < ChunkSize; z++)
         {
             for (int y = 0; y < ChunkSize; y++)
@@ -184,29 +99,63 @@ public class MarchingCubes : MonoBehaviour
                     foreach (int el in TriangleTable[index])
                     {
                         if (el == -1) break;
-                        newTriangles.Add(
-                            verticeMap[new Vector3(x, y, z) + cubeEdgeOffset[el]]
-                            );
-                        step++;
+                        Vector3 vertex = new Vector3(x, y, z) + cubeEdgeOffset[el];
+
+                        if (!verticeMap.ContainsKey(vertex))
+                        {
+                            newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(x, y, z, offset, el));
+                            verticeMap[vertex] = step++;
+
+                            float colorValueX = (vertex.x + ChunkSize * offset.x) / (ChunksAmount.x * ChunkSize);
+                            float colorValueY = (vertex.y + ChunkSize * offset.y) / (ChunksAmount.y * ChunkSize);
+                            float colorValueZ = (vertex.z + ChunkSize * offset.z) / (ChunksAmount.z * ChunkSize);
+                            colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
+                        }
+
+                        newTriangles.Add(verticeMap[vertex]);
                     }
                 }
             }
         }
-        Mesh mesh = new Mesh();
-        mesh.vertices = newVertices.ToArray();
-        mesh.triangles = newTriangles.ToArray();
-        mesh.colors = colors.ToArray();
+
+        Mesh mesh = new()
+        {
+            vertices = newVertices.ToArray(),
+            triangles = newTriangles.ToArray(),
+            colors = colors.ToArray()
+        };
         mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
         chunk.GetComponent<MeshFilter>().mesh = mesh;
         chunk.GetComponent<MeshRenderer>().material = material;
-        mesh.RecalculateBounds();
+    }
+
+    Vector3 CalcVertexPos(int x, int y, int z, Vector3 offset, int n)
+    {
+        x += ChunkSize * (int)offset.x;
+        y += ChunkSize * (int)offset.y;
+        z += ChunkSize * (int)offset.z;
+
+        Vector3Int pointA = new Vector3Int(x, y, z) + vertices[edgeVertexIndices[n][0]];
+        Vector3Int pointB = new Vector3Int(x, y, z) + vertices[edgeVertexIndices[n][1]];
+
+        float pos = (NoiseCutOff - noisePoints[pointA.z][pointA.y][pointA.x]) /
+            (noisePoints[pointB.z][pointB.y][pointB.x] - noisePoints[pointA.z][pointA.y][pointA.x]);
+
+        return n switch
+        {
+            0 or 2 or 4 or 6 => vertices[edgeVertexIndices[n][0]] + new Vector3(pos, 0, 0),
+            1 or 3 or 5 or 7 => vertices[edgeVertexIndices[n][0]] + new Vector3(0, pos, 0),
+            8 or 9 or 10 or 11 => vertices[edgeVertexIndices[n][0]] + new Vector3(0, 0, pos),
+            _ => new Vector3(0, 0, 0)
+        };
     }
 
     public void GenerateChunk(Vector3 offset, GameObject chunk)
     {
-        Vector3[] newVertices = new Vector3[12 * ChunkSize * ChunkSize * ChunkSize];
-        int[] newTriangles = new int[12 * ChunkSize * ChunkSize * ChunkSize];
-        Color[] colors = new Color[12 * ChunkSize * ChunkSize * ChunkSize];
+        List<Vector3> newVertices = new List<Vector3>();
+        List<int> newTriangles = new List<int>();
+        List<Color> colors = new();
 
         // "Marches" over the chunk, at every point gets TriangeTable index based on
         // the generated points and then adds new vertices and triangles to the list.
@@ -221,14 +170,14 @@ public class MarchingCubes : MonoBehaviour
                     foreach (int el in TriangleTable[index])
                     {
                         if (el == -1) break;
-                        newVertices[step] = new Vector3(x,y,z) + cubeEdgeOffset[el];
-                        newTriangles[step] = step;
+                        newVertices.Add(new Vector3(x,y,z) + cubeEdgeOffset[el]);
+                        newTriangles.Add(step);
                         // Map x,y,z positions/offsets to 0-1
                         float colorValueX = (float)((x * 0.1 + offset.x) / (ChunkSize * 0.1 + ChunkSize));
                         float colorValueY = (float)((y * 0.1 + offset.y) / (ChunkSize * 0.1 + ChunkSize));
                         float colorValueZ = (float)((z * 0.1 + offset.z) / (ChunkSize * 0.1 + ChunkSize));
 
-                        colors[step] = Color.HSVToRGB(colorValueX/2 + colorValueZ/2, colorValueY * 1/3 + 0.25f, colorValueY);
+                        colors.Add(Color.HSVToRGB(colorValueX/2 + colorValueZ/2, colorValueY * 1/3 + 0.25f, colorValueY));
                         step++;
                     }
                 }
@@ -236,14 +185,14 @@ public class MarchingCubes : MonoBehaviour
         }
 
         Mesh mesh = new Mesh();
-        mesh.vertices = newVertices;
-        mesh.triangles = newTriangles;
-        mesh.colors = colors;
+        mesh.vertices = newVertices.ToArray();
+        mesh.triangles = newTriangles.ToArray();
+        mesh.colors = colors.ToArray();
         mesh.RecalculateNormals();
         chunk.GetComponent<MeshFilter>().mesh = mesh;
         //chunk.AddComponent<MeshCollider>().sharedMesh = mesh; // Collision
         chunk.GetComponent<MeshRenderer>().material = material;
-        //mesh.RecalculateBounds();
+        mesh.RecalculateBounds();
         //mesh.Optimize();
     }
 
@@ -324,6 +273,50 @@ public class MarchingCubes : MonoBehaviour
 
         return XYZ / 6f;
     }
+
+    #region Arrays used for marching cubes
+
+    private static readonly Vector3[] cubeEdgeOffset = {
+        new Vector3(0.5f,0,0),
+        new Vector3(1,0.5f,0),
+        new Vector3(0.5f,1,0),
+        new Vector3(0,0.5f,0),
+        new Vector3(0.5f,0,1),
+        new Vector3(1,0.5f,1),
+        new Vector3(0.5f,1,1),
+        new Vector3(0,0.5f,1),
+        new Vector3(0,0,0.5f),
+        new Vector3(1,0,0.5f),
+        new Vector3(1,1,0.5f),
+        new Vector3(0,1,0.5f)
+    };
+
+    private static readonly int[][] edgeVertexIndices = new int[][]{
+        new int[]{0, 1},
+        new int[]{1, 3},
+        new int[]{2, 3},
+        new int[]{0, 2},
+        new int[]{4, 5},
+        new int[]{5, 7},
+        new int[]{6, 7},
+        new int[]{4, 6},
+        new int[]{0, 4},
+        new int[]{1, 5},
+        new int[]{3, 7},
+        new int[]{2, 6}
+    };
+
+    private static readonly Vector3Int[] vertices = new Vector3Int[]
+    {
+        new Vector3Int(0,0,0),
+        new Vector3Int(1,0,0),
+        new Vector3Int(0,1,0),
+        new Vector3Int(1,1,0),
+        new Vector3Int(0,0,1),
+        new Vector3Int(1,0,1),
+        new Vector3Int(0,1,1),
+        new Vector3Int(1,1,1)
+    };
 
     private static readonly int[][] TriangleTable = new int[][] {
         new int[] { -1 },
@@ -583,4 +576,6 @@ public class MarchingCubes : MonoBehaviour
         new int[] { 8, 3, 0, -1 },
         new int[] { -1 },
     };
+
+    #endregion
 }

@@ -3245,8 +3245,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e79eb77e19b9004f8ee416b9cbc479f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ChunksAmount: {x: 15, y: 15, z: 15}
-  ChunkSize: 10
+  ChunksAmount: {x: 3, y: 3, z: 3}
+  ChunkSize: 27
   PerlinDensity: 0.05
   NoiseCutOff: 0.47
   ChunkPrefab: {fileID: 4135903743341575070, guid: 30642f62e726a7a4ba887ac2065a3d37, type: 3}
