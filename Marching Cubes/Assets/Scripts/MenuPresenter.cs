@@ -46,4 +46,9 @@ public class MenuPresenter : MonoBehaviour
             Menu.SetActive(! Menu.activeSelf);
         }
     }
+
+    public void Exit()
+    {
+        Application.Quit();
+    }
 }

@@ -125,6 +125,7 @@ public class MarchingCubes : MonoBehaviour
             colors = colors.ToArray()
         };
         mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
         mesh.RecalculateBounds();
         chunk.GetComponent<MeshFilter>().mesh = mesh;
         chunk.GetComponent<MeshRenderer>().material = material;
@@ -238,11 +239,20 @@ public class MarchingCubes : MonoBehaviour
                         {
                             points[z][y][x] = PerlinNoise2D(x, y, z);
                         }
+                        else if (NoiseGenerator == NoiseGenerator.Perlid2DX3D)
+                        {
+                            points[z][y][x] = PerlinNoise2DX3D(x, y, z);
+                        }
                     } 
                 }
             }
         }
         return points;
+    }
+
+    private float PerlinNoise2DX3D(float x, float y, float z)
+    {
+        return (PerlinNoise2D(x,y,z) == 0) ? 0:PerlinNoise3D(x,y,z);
     }
 
     private float PerlinNoise2D(float x, float y, float z)
@@ -251,13 +261,14 @@ public class MarchingCubes : MonoBehaviour
         x *= PerlinDensity;
         z *= PerlinDensity;
         float xzPerlinHeight = Mathf.PerlinNoise(x, z);
+
         if (height * xzPerlinHeight > y)
             return 1;
         return 0;
     }
 
 
-    float PerlinNoise3D(float x, float y, float z)
+    private float PerlinNoise3D(float x, float y, float z)
     {
         x *= PerlinDensity;
         y *= PerlinDensity;

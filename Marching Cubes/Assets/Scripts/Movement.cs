@@ -14,7 +14,7 @@ public class Movement : MonoBehaviour
 
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Confined;
+        //Cursor.lockState = CursorLockMode.Confined;
         //_rb = GetComponent<Rigidbody>();
     }
     void Update()
