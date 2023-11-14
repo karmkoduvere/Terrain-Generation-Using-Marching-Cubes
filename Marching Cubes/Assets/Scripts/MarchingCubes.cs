@@ -10,7 +10,7 @@ public class MarchingCubes : MonoBehaviour
     public static MarchingCubes Instance;
     
     [FormerlySerializedAs("Chunks")] public Vector3 ChunksAmount;
-    public int ChunkSize;
+    public int ChunkSize = 27; // Optimal chunk size 
     [Range(0f, 1f)]
     public float PerlinDensity;
     [Range(0f, 1f)]
@@ -84,11 +84,122 @@ public class MarchingCubes : MonoBehaviour
                         Quaternion.identity,
                         chunksParent.transform
                         );
-                    GenerateChunk(new Vector3(x,y,z), chunk);
+                    GenerateChunkSmooth(new Vector3(x,y,z), chunk);
                 }
             }
         }
 
+    }
+
+    float CalcOffset(int x, int y, int z, Vector3 offset, int n)
+    {
+        x += ChunkSize * (int)offset.x;
+        y += ChunkSize * (int)offset.y;
+        z += ChunkSize * (int)offset.z;
+        if (false)
+        {
+            Debug.Log("x: " + x);
+            Debug.Log("y: " + y);
+            Debug.Log("z: " + z);
+            Debug.Log("noisePoints: " + noisePoints[z][y][x]);
+            switch (n)
+            {
+                case 0:
+                    Debug.Log("noisePoints x : " + noisePoints[z][y][x + 1]);
+                    break;
+                case 1:
+                    Debug.Log("noisePoints y: " + noisePoints[z][y + 1][x]);
+                    break;
+                case 2:
+                    Debug.Log("noisePoints z: " + noisePoints[z + 1][y][x]);
+                    break;
+            }
+            Debug.Log("");
+        }
+        
+        float o;
+        if (n == 0) o = (NoiseCutOff - noisePoints[z][y][x]) / (noisePoints[z][y][x + 1] - noisePoints[z][y][x]);
+        else if (n == 1) o = (NoiseCutOff - noisePoints[z][y][x]) / (noisePoints[z][y + 1][x] - noisePoints[z][y][x]);
+        else if (n == 2) o = (NoiseCutOff - noisePoints[z][y][x]) / (noisePoints[z + 1][y][x] - noisePoints[z][y][x]);
+        else o = 0.5f;
+        
+        if (o <= 0 || o == float.PositiveInfinity) return 0.5f;
+        else return o;
+    }
+
+    public void GenerateChunkSmooth(Vector3 offset, GameObject chunk)
+    {
+        //List<Vector3> newVertices = new List<Vector3>();
+        //List<int> newTriangles = new List<int>();
+        List<Vector3> newVertices = new();
+        Dictionary<Vector3, int> verticeMap = new();
+        List<int> newTriangles = new();
+        List<Color> colors = new();
+
+        int step = 0;
+        for (int z = 0; z < ChunkSize + 1; z++)
+        {
+            for (int y = 0; y < ChunkSize + 1; y++)
+            {
+                for (int x = 0; x < ChunkSize + 1; x++)
+                {
+                    float colorValueX = (float)(x + ChunkSize * offset.x) / (ChunksAmount.x * ChunkSize);
+                    float colorValueY = (float)(y + ChunkSize * offset.y) / (ChunksAmount.y * ChunkSize);
+                    float colorValueZ = (float)(z + ChunkSize * offset.z) / (ChunksAmount.z * ChunkSize);
+                    if (x != ChunkSize)
+                    {
+                        Vector3 vertexX = new Vector3(x + CalcOffset(x, y, z, offset, 0), y, z);
+                        newVertices.Add(vertexX);
+                        verticeMap[new Vector3(x + 0.5f, y, z)] = step++;
+
+                        colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
+                    }
+                    if (y != ChunkSize)
+                    {
+                        Vector3 vertexY = new Vector3(x, y + CalcOffset(x, y, z, offset, 1), z);
+                        newVertices.Add(vertexY);
+                        verticeMap[new Vector3(x , y + 0.5f, z)] = step++;
+                        colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
+                    }
+                    if (z != ChunkSize)
+                    {
+                        Vector3 vertexZ = new Vector3(x, y, z + CalcOffset(x, y, z, offset, 2));
+                        newVertices.Add(vertexZ);
+                        verticeMap[new Vector3(x, y, z + 0.5f)] = step++;
+                        colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
+                    }
+                }
+            }
+        }
+
+        // "Marches" over the chunk, at every point gets TriangeTable index based on
+        // the generated points and then adds new vertices and triangles to the list.
+        for (int z = 0; z < ChunkSize; z++)
+        {
+            for (int y = 0; y < ChunkSize; y++)
+            {
+                for (int x = 0; x < ChunkSize; x++)
+                {
+                    int index = GetTriangleIndex(x, y, z, offset);
+                    foreach (int el in TriangleTable[index])
+                    {
+                        if (el == -1) break;
+                        newTriangles.Add(
+                            verticeMap[new Vector3(x, y, z) + cubeEdgeOffset[el]]
+                            );
+                        step++;
+                    }
+                }
+            }
+        }
+        Mesh mesh = new Mesh();
+        mesh.vertices = newVertices.ToArray();
+        mesh.triangles = newTriangles.ToArray();
+        mesh.colors = colors.ToArray();
+        mesh.RecalculateNormals();
+        chunk.GetComponent<MeshFilter>().mesh = mesh;
+        chunk.GetComponent<MeshRenderer>().material = material;
+        mesh.RecalculateBounds();
     }
 
     public void GenerateChunk(Vector3 offset, GameObject chunk)
