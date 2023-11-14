@@ -1,9 +1,9 @@
 # Terrain Generation Using Marching Cubes
 
-Project description
+## Project description
 The project idea is to implement marching cubes algorithm to procedurally generate interesting 3D terrain with caves and cliffs. For the procedural part, the plan is to experiment with different noise functions to create various types of landscapes.
 
-Launching guide:
+### Launching guide:
 * Open project with Unity
 * Hit Play
   
