@@ -10,7 +10,7 @@ public class VariablesPanel : MonoBehaviour
     // Start is called before the first frame update
     public void Start()
     {
-        perlinDensity.value = MarchingCubes.Instance.PerlinDensity;
+        perlinDensity.value = WorldGenerator.Instance.PerlinDensity;
         perlinDensity.onValueChanged.AddListener(delegate { SetPerlinDensity(); });
     }
 
@@ -22,6 +22,6 @@ public class VariablesPanel : MonoBehaviour
 
     public void SetPerlinDensity()
     {
-        MarchingCubes.Instance.PerlinDensity = perlinDensity.value;
+        WorldGenerator.Instance.PerlinDensity = perlinDensity.value;
     }
 }

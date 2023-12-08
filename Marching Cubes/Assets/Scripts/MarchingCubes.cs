@@ -8,77 +8,75 @@ using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 public class MarchingCubes : MonoBehaviour
-{
-    public static MarchingCubes Instance;
+{    
+    private Vector3 wordlSize;
+    private int chunkSize;
+    private float perlinDensity;
+    private float noiseCutOff;
     
-    [FormerlySerializedAs("Chunks")] public Vector3 ChunksAmount;
-    public int ChunkSize = 27;
-    [Range(0f, 1f)]
-    public float PerlinDensity;
-    [Range(0f, 1f)]
-    public float NoiseCutOff;
-
-    public GameObject ChunkPrefab;
-    public GameObject Marker;
-    public NoiseGenerator NoiseGenerator = NoiseGenerator.PerlinNoise3D;
-    public Material material;
+    private NoiseGenerator noiseGenerator;
+    private Material material;
 
     private float[][][] noisePoints;
 
-    private void Awake()
+    public GameObject ChunkPrefab;
+
+    public GameObject Marker;
+    public bool Mark;
+
+    private float[] LODTrainsitionDistances = new float[] { 0.4f, 0.2f, 0.1f, 0.05f }; // Array of distances for LOD transitions
+    private LODGroup group;
+
+    private void Start()
     {
-        Instance = this;
+        
     }
 
-    public void Start()
+    [ContextMenu("test")]
+    void HighlightVertices()
     {
-        Refresh();
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown("r")) Refresh();
-    }
-
-    void Refresh()
-    {
-        for (int i = 0; i < transform.childCount; i++)
+        var sum = 0.0;
+        foreach (LOD lod in group.GetLODs())
         {
-            Destroy(transform.GetChild(i).gameObject);
+            sum += lod.screenRelativeTransitionHeight;
+            print(lod.screenRelativeTransitionHeight);
+
         }
-        Generate();
+        print(sum);
     }
 
-    void Generate()
+    public void Generate(Vector3 offset)
     {
-        int lenght = ChunkSize * (int)ChunksAmount.x + 1;
-        int height = ChunkSize * (int)ChunksAmount.y + 1;
-        int depth = ChunkSize * (int)ChunksAmount.z + 1;
-        noisePoints = CreatePoints(lenght, height, depth);
+        wordlSize = WorldGenerator.Instance.WorldSize;
+        chunkSize = WorldGenerator.Instance.chunkSize;
+        perlinDensity = WorldGenerator.Instance.PerlinDensity;
+        noiseCutOff = WorldGenerator.Instance.NoiseCutOff;
+        noiseGenerator = WorldGenerator.Instance.NoiseGenerator;
+        material = WorldGenerator.Instance.Material;
+        group = gameObject.GetComponent<LODGroup>();
 
-        GameObject chunksParent = new GameObject("ChunksParent");
-        chunksParent.transform.parent = transform;
+        noisePoints = CreatePoints(offset);
 
-        for (int z = 0; z < ChunksAmount.z; z++)
+        // Add 4 LOD levels
+        LOD[] lods = new LOD[4];
+        for (int i = 0; i < 4; i++)
         {
-            for (int y = 0; y < ChunksAmount.y; y++)
-            {
-                for (int x = 0; x < ChunksAmount.x; x++)
-                {
-                    GameObject chunk = Instantiate(
-                        ChunkPrefab,
-                        new Vector3(x * ChunkSize, y * ChunkSize, z * ChunkSize),
-                        Quaternion.identity,
-                        chunksParent.transform
-                        );
-                    GenerateChunkSmooth(new Vector3(x,y,z), chunk);
-                }
-            }
+            GameObject chunkLOD = Instantiate(
+                ChunkPrefab,
+                new Vector3(offset.x * chunkSize, offset.y * chunkSize, offset.z * chunkSize),
+                Quaternion.identity,
+                transform
+            );
+            GenerateChunkSmooth(offset, (i+1),chunkLOD);
+            print(LODTrainsitionDistances[i]);
+            lods[i] = new LOD(LODTrainsitionDistances[i], new Renderer[] { chunkLOD.GetComponent<MeshRenderer>() });            
         }
 
+        group.SetLODs(lods);
+        group.RecalculateBounds();
     }
 
-    public void GenerateChunkSmooth(Vector3 offset, GameObject chunk)
+    public void GenerateChunkSmooth(Vector3 offset, int LOD, GameObject chunk)
     {
         List<Vector3> newVertices = new();
         List<int> newTriangles = new();
@@ -89,26 +87,27 @@ public class MarchingCubes : MonoBehaviour
         // "Marches" over the chunk, at every point gets TriangeTable index based on
         // the generated points and then adds new vertices and triangles to the list.
         int step = 0;
-        for (int z = 0; z < ChunkSize; z++)
+        for (int z = 0; z < chunkSize; z += LOD)
         {
-            for (int y = 0; y < ChunkSize; y++)
+            for (int y = 0; y < chunkSize; y += LOD)
             {
-                for (int x = 0; x < ChunkSize; x++)
+                for (int x = 0; x < chunkSize; x += LOD)
                 {
-                    int index = GetTriangleIndex(x, y, z, offset);
+                    int index = GetTriangleIndex(x, y, z,LOD);
                     foreach (int el in TriangleTable[index])
                     {
                         if (el == -1) break;
-                        Vector3 vertex = new Vector3(x, y, z) + cubeEdgeOffset[el];
+                        Vector3 vertex = new Vector3(x, y, z) + cubeEdgeOffset[el] * LOD;
 
                         if (!verticeMap.ContainsKey(vertex))
                         {
-                            newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(x, y, z, offset, el));
-                            verticeMap[vertex] = step++;
+                            if (Mark) Instantiate(Marker, new Vector3(x, y, z) + CalcVertexPos(x, y, z, el, LOD) * LOD, Quaternion.identity, chunk.transform);
 
-                            float colorValueX = (vertex.x + ChunkSize * offset.x) / (ChunksAmount.x * ChunkSize);
-                            float colorValueY = (vertex.y + ChunkSize * offset.y) / (ChunksAmount.y * ChunkSize);
-                            float colorValueZ = (vertex.z + ChunkSize * offset.z) / (ChunksAmount.z * ChunkSize);
+                            newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(x, y, z, el,LOD)*LOD);// cubeEdgeOffset[el]*LOD
+                            verticeMap[vertex] = step++;
+                            float colorValueX = (vertex.x + chunkSize * offset.x) / (wordlSize.x * chunkSize);
+                            float colorValueY = (vertex.y + chunkSize * offset.y) / (wordlSize.y * chunkSize);
+                            float colorValueZ = (vertex.z + chunkSize * offset.z) / (wordlSize.z * chunkSize);
                             colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
                         }
 
@@ -131,16 +130,12 @@ public class MarchingCubes : MonoBehaviour
         chunk.GetComponent<MeshRenderer>().material = material;
     }
 
-    Vector3 CalcVertexPos(int x, int y, int z, Vector3 offset, int n)
+    Vector3 CalcVertexPos(int x, int y, int z, int n, int LOD)
     {
-        x += ChunkSize * (int)offset.x;
-        y += ChunkSize * (int)offset.y;
-        z += ChunkSize * (int)offset.z;
+        Vector3Int pointA = new Vector3Int(x, y, z) + vertices[edgeVertexIndices[n][0]]*LOD;
+        Vector3Int pointB = new Vector3Int(x, y, z) + vertices[edgeVertexIndices[n][1]] * LOD;
 
-        Vector3Int pointA = new Vector3Int(x, y, z) + vertices[edgeVertexIndices[n][0]];
-        Vector3Int pointB = new Vector3Int(x, y, z) + vertices[edgeVertexIndices[n][1]];
-
-        float pos = (NoiseCutOff - noisePoints[pointA.z][pointA.y][pointA.x]) /
+        float pos = (noiseCutOff - noisePoints[pointA.z][pointA.y][pointA.x]) /
             (noisePoints[pointB.z][pointB.y][pointB.x] - noisePoints[pointA.z][pointA.y][pointA.x]);
 
         return n switch
@@ -161,22 +156,22 @@ public class MarchingCubes : MonoBehaviour
         // "Marches" over the chunk, at every point gets TriangeTable index based on
         // the generated points and then adds new vertices and triangles to the list.
         int step = 0;        
-        for (int z = 0; z < ChunkSize; z++)
+        for (int z = 0; z < chunkSize; z++)
         {
-            for (int y = 0; y < ChunkSize; y++)
+            for (int y = 0; y < chunkSize; y++)
             {
-                for (int x = 0; x < ChunkSize; x++)
+                for (int x = 0; x < chunkSize; x++)
                 {
-                    int index = GetTriangleIndex(x, y, z, offset);
+                    int index = GetTriangleIndex(x, y, z,1);
                     foreach (int el in TriangleTable[index])
                     {
                         if (el == -1) break;
                         newVertices.Add(new Vector3(x,y,z) + cubeEdgeOffset[el]);
                         newTriangles.Add(step);
                         // Map x,y,z positions/offsets to 0-1
-                        float colorValueX = (float)((x * 0.1 + offset.x) / (ChunkSize * 0.1 + ChunkSize));
-                        float colorValueY = (float)((y * 0.1 + offset.y) / (ChunkSize * 0.1 + ChunkSize));
-                        float colorValueZ = (float)((z * 0.1 + offset.z) / (ChunkSize * 0.1 + ChunkSize));
+                        float colorValueX = (float)((x * 0.1 + offset.x) / (chunkSize * 0.1 + chunkSize));
+                        float colorValueY = (float)((y * 0.1 + offset.y) / (chunkSize * 0.1 + chunkSize));
+                        float colorValueZ = (float)((z * 0.1 + offset.z) / (chunkSize * 0.1 + chunkSize));
 
                         colors.Add(Color.HSVToRGB(colorValueX/2 + colorValueZ/2, colorValueY * 1/3 + 0.25f, colorValueY));
                         step++;
@@ -198,81 +193,87 @@ public class MarchingCubes : MonoBehaviour
     }
 
     // Calculates index for the TriangleTable based on generated noisePoints and given cords
-    int GetTriangleIndex(int x, int y, int z, Vector3 offset)
+    int GetTriangleIndex(int x, int y, int z, int LOD)
     {
-        x += ChunkSize * (int)offset.x;
-        y += ChunkSize * (int)offset.y;
-        z += ChunkSize * (int)offset.z;
-
-        string bi = ((noisePoints[z + 1][y + 1][x + 1] < NoiseCutOff) ? "0" : "1") +
-                    ((noisePoints[z + 1][y + 1][x] < NoiseCutOff) ? "0" : "1") +
-                    ((noisePoints[z + 1][y][x + 1] < NoiseCutOff) ? "0" : "1") +
-                    ((noisePoints[z + 1][y][x] < NoiseCutOff) ? "0" : "1") +
-                    ((noisePoints[z][y + 1][x + 1] < NoiseCutOff) ? "0" : "1") +
-                    ((noisePoints[z][y + 1][x] < NoiseCutOff) ? "0" : "1") +
-                    ((noisePoints[z][y][x + 1] < NoiseCutOff) ? "0" : "1") +
-                    ((noisePoints[z][y][x] < NoiseCutOff) ? "0" : "1");
+        int offset = LOD;
+        string bi = ((noisePoints[z + offset][y + offset][x + offset] < noiseCutOff) ? "0" : "1") +
+                    ((noisePoints[z + offset][y + offset][x] < noiseCutOff) ? "0" : "1") +
+                    ((noisePoints[z + offset][y][x + offset] < noiseCutOff) ? "0" : "1") +
+                    ((noisePoints[z + offset][y][x] < noiseCutOff) ? "0" : "1") +
+                    ((noisePoints[z][y + offset][x + offset] < noiseCutOff) ? "0" : "1") +
+                    ((noisePoints[z][y + offset][x] < noiseCutOff) ? "0" : "1") +
+                    ((noisePoints[z][y][x + offset] < noiseCutOff) ? "0" : "1") +
+                    ((noisePoints[z][y][x] < noiseCutOff) ? "0" : "1");
 
         return Convert.ToInt32(bi, 2);
     }
 
     // Generates noise points with 3D array the size of lenght * height * depth
-    float[][][] CreatePoints(int lenght, int height, int depth)
+    float[][][] CreatePoints(Vector3 offset)
     {
-        float[][][] points = new float[depth][][];
-        for (int z = 0; z < depth; z++)
+        int xOffset = chunkSize * (int)offset.x;
+        int yOffset = chunkSize * (int)offset.y;
+        int zOffset = chunkSize * (int)offset.z;
+
+        float[][][] points = new float[chunkSize+1][][];
+        for (int z = 0; z < chunkSize+1; z++)
         {
-            points[z] = new float[height][];
-            for (int y = 0; y < height; y++)
+            points[z] = new float[chunkSize+1][];
+            for (int y = 0; y < chunkSize+1; y++)
             {
-                points[z][y] = new float[lenght];
-                for (int x = 0; x < lenght; x++)
+                points[z][y] = new float[chunkSize+1];
+                for (int x = 0; x < chunkSize+1; x++)
                 {
-                    if (z == 0 || y == 0 || x == 0 || z + 1 == depth || y + 1 == height || x + 1 == lenght) 
+                    //if (Mark) Instantiate(Marker, new Vector3(x, y, z), Quaternion.identity, transform);
+                    if (z+zOffset == 0 || y + yOffset == 0 || x + xOffset == 0 || z+zOffset == wordlSize.z*chunkSize || y + yOffset == wordlSize.y * chunkSize || x + xOffset == wordlSize.x * chunkSize)
                         points[z][y][x] = 0;
                     else
                     {
-                        if (NoiseGenerator == NoiseGenerator.PerlinNoise3D)
+                        if (noiseGenerator == NoiseGenerator.PerlinNoise3D)
                         {
-                            points[z][y][x] = PerlinNoise3D(x,y,z);
-                        } else if (NoiseGenerator == NoiseGenerator.PerlinNoise2D)
-                        {
-                            points[z][y][x] = PerlinNoise2D(x, y, z);
+                            points[z][y][x] = PerlinNoise3D(x + xOffset, y + yOffset, z + zOffset);
                         }
-                        else if (NoiseGenerator == NoiseGenerator.Perlid2DX3D)
+                        else if (noiseGenerator == NoiseGenerator.PerlinNoise2D)
                         {
-                            points[z][y][x] = PerlinNoise2DX3D(x, y, z);
+                            points[z][y][x] = PerlinNoise2D(x + xOffset, y + yOffset, z + zOffset);
                         }
-                    } 
+                        else if (noiseGenerator == NoiseGenerator.Perlid2DX3D)
+                        {
+                            points[z][y][x] = PerlinNoise2DX3D(x + xOffset, y + yOffset, z + zOffset);
+                        }
+                    }
                 }
             }
         }
         return points;
     }
 
+    #region Noises
     private float PerlinNoise2DX3D(float x, float y, float z)
     {
-        return (PerlinNoise2D(x,y,z) == 0) ? 0:PerlinNoise3D(x,y,z);
+        return (PerlinNoise2D(x, y, z) == 0) ? 0 : PerlinNoise3D(x, y, z);
     }
 
     private float PerlinNoise2D(float x, float y, float z)
     {
-        int height = ChunkSize * (int)ChunksAmount.y + 1;
-        x *= PerlinDensity;
-        z *= PerlinDensity;
+        int height = chunkSize * (int)wordlSize.y + 1;
+        x *= perlinDensity;
+        z *= perlinDensity;
         float xzPerlinHeight = Mathf.PerlinNoise(x, z);
 
         if (height * xzPerlinHeight > y)
+        {
+            if (height * xzPerlinHeight - y < 1.0) return height * xzPerlinHeight - y;
             return 1;
+        }
         return 0;
     }
 
-
     private float PerlinNoise3D(float x, float y, float z)
     {
-        x *= PerlinDensity;
-        y *= PerlinDensity;
-        z *= PerlinDensity;
+        x *= perlinDensity;
+        y *= perlinDensity;
+        z *= perlinDensity;
         float XY = Mathf.PerlinNoise(x, y);
         float XZ = Mathf.PerlinNoise(x, z);
         float YX = Mathf.PerlinNoise(y, x);
@@ -284,6 +285,7 @@ public class MarchingCubes : MonoBehaviour
 
         return XYZ / 6f;
     }
+    #endregion
 
     #region Arrays used for marching cubes
 

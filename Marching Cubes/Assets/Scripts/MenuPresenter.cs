@@ -34,8 +34,8 @@ public class MenuPresenter : MonoBehaviour
 
     private void SetTerrainNoiseGenerator(NoiseGenerator noiseGenerator)
     {
-        MarchingCubes.Instance.NoiseGenerator = noiseGenerator;
-        MarchingCubes.Instance.Start();
+        WorldGenerator.Instance.NoiseGenerator = noiseGenerator;
+        WorldGenerator.Instance.Start();
         Menu.SetActive(false);
     }
 
