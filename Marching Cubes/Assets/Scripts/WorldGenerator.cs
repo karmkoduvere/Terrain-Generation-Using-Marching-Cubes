@@ -1,8 +1,6 @@
 using DefaultNamespace;
-using System.Collections;
-using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class WorldGenerator : MonoBehaviour
 {
@@ -44,8 +42,8 @@ public class WorldGenerator : MonoBehaviour
 
     void Generate()
     {
-        GameObject chunksParent = new("ChunksParent");
-        chunksParent.transform.parent = transform;
+        GameObject chunks = new("Chunks");
+        chunks.transform.parent = transform;
 
         for (int z = 0; z < WorldSize.z; z++)
         {
@@ -57,8 +55,9 @@ public class WorldGenerator : MonoBehaviour
                         ChunkPrefab,
                         new Vector3(x * chunkSize, y * chunkSize, z * chunkSize),
                         Quaternion.identity,
-                        chunksParent.transform
+                        chunks.transform
                     );
+                    chunk.name = $"Chunk_({x}, {y}, {z})";
                     chunk.Generate(new Vector3(x, y, z));
                 }
             }

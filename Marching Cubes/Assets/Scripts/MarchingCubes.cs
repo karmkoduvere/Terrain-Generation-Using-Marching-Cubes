@@ -1,14 +1,15 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using DefaultNamespace;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UIElements;
 
 public class MarchingCubes : MonoBehaviour
-{    
+{
+    public GameObject ChunkLODPrefab;
+    public GameObject Marker;
+    public bool Mark;
+
+
     private Vector3 wordlSize;
     private int chunkSize;
     private float perlinDensity;
@@ -19,31 +20,8 @@ public class MarchingCubes : MonoBehaviour
 
     private float[][][] noisePoints;
 
-    public GameObject ChunkPrefab;
-
-    public GameObject Marker;
-    public bool Mark;
-
     private float[] LODTrainsitionDistances = new float[] { 0.4f, 0.2f, 0.1f, 0.05f }; // Array of distances for LOD transitions
     private LODGroup group;
-
-    private void Start()
-    {
-        
-    }
-
-    [ContextMenu("test")]
-    void HighlightVertices()
-    {
-        var sum = 0.0;
-        foreach (LOD lod in group.GetLODs())
-        {
-            sum += lod.screenRelativeTransitionHeight;
-            print(lod.screenRelativeTransitionHeight);
-
-        }
-        print(sum);
-    }
 
     public void Generate(Vector3 offset)
     {
@@ -62,13 +40,13 @@ public class MarchingCubes : MonoBehaviour
         for (int i = 0; i < 4; i++)
         {
             GameObject chunkLOD = Instantiate(
-                ChunkPrefab,
+                ChunkLODPrefab,
                 new Vector3(offset.x * chunkSize, offset.y * chunkSize, offset.z * chunkSize),
                 Quaternion.identity,
                 transform
             );
+            chunkLOD.name = $"ChunkLOD_{i + 1}";
             GenerateChunkSmooth(offset, (i+1),chunkLOD);
-            print(LODTrainsitionDistances[i]);
             lods[i] = new LOD(LODTrainsitionDistances[i], new Renderer[] { chunkLOD.GetComponent<MeshRenderer>() });            
         }
 
@@ -103,7 +81,7 @@ public class MarchingCubes : MonoBehaviour
                         {
                             if (Mark) Instantiate(Marker, new Vector3(x, y, z) + CalcVertexPos(x, y, z, el, LOD) * LOD, Quaternion.identity, chunk.transform);
 
-                            newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(x, y, z, el,LOD)*LOD);// cubeEdgeOffset[el]*LOD
+                            newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(x, y, z, el,LOD)*LOD);// Change to cubeEdgeOffset[el]*LOD for sharp edges
                             verticeMap[vertex] = step++;
                             float colorValueX = (vertex.x + chunkSize * offset.x) / (wordlSize.x * chunkSize);
                             float colorValueY = (vertex.y + chunkSize * offset.y) / (wordlSize.y * chunkSize);
@@ -147,51 +125,6 @@ public class MarchingCubes : MonoBehaviour
         };
     }
 
-    public void GenerateChunk(Vector3 offset, GameObject chunk)
-    {
-        List<Vector3> newVertices = new List<Vector3>();
-        List<int> newTriangles = new List<int>();
-        List<Color> colors = new();
-
-        // "Marches" over the chunk, at every point gets TriangeTable index based on
-        // the generated points and then adds new vertices and triangles to the list.
-        int step = 0;        
-        for (int z = 0; z < chunkSize; z++)
-        {
-            for (int y = 0; y < chunkSize; y++)
-            {
-                for (int x = 0; x < chunkSize; x++)
-                {
-                    int index = GetTriangleIndex(x, y, z,1);
-                    foreach (int el in TriangleTable[index])
-                    {
-                        if (el == -1) break;
-                        newVertices.Add(new Vector3(x,y,z) + cubeEdgeOffset[el]);
-                        newTriangles.Add(step);
-                        // Map x,y,z positions/offsets to 0-1
-                        float colorValueX = (float)((x * 0.1 + offset.x) / (chunkSize * 0.1 + chunkSize));
-                        float colorValueY = (float)((y * 0.1 + offset.y) / (chunkSize * 0.1 + chunkSize));
-                        float colorValueZ = (float)((z * 0.1 + offset.z) / (chunkSize * 0.1 + chunkSize));
-
-                        colors.Add(Color.HSVToRGB(colorValueX/2 + colorValueZ/2, colorValueY * 1/3 + 0.25f, colorValueY));
-                        step++;
-                    }
-                }
-            }
-        }
-
-        Mesh mesh = new Mesh();
-        mesh.vertices = newVertices.ToArray();
-        mesh.triangles = newTriangles.ToArray();
-        mesh.colors = colors.ToArray();
-        mesh.RecalculateNormals();
-        chunk.GetComponent<MeshFilter>().mesh = mesh;
-        //chunk.AddComponent<MeshCollider>().sharedMesh = mesh; // Collision
-        chunk.GetComponent<MeshRenderer>().material = material;
-        mesh.RecalculateBounds();
-        //mesh.Optimize();
-    }
-
     // Calculates index for the TriangleTable based on generated noisePoints and given cords
     int GetTriangleIndex(int x, int y, int z, int LOD)
     {
@@ -224,7 +157,6 @@ public class MarchingCubes : MonoBehaviour
                 points[z][y] = new float[chunkSize+1];
                 for (int x = 0; x < chunkSize+1; x++)
                 {
-                    //if (Mark) Instantiate(Marker, new Vector3(x, y, z), Quaternion.identity, transform);
                     if (z+zOffset == 0 || y + yOffset == 0 || x + xOffset == 0 || z+zOffset == wordlSize.z*chunkSize || y + yOffset == wordlSize.y * chunkSize || x + xOffset == wordlSize.x * chunkSize)
                         points[z][y][x] = 0;
                     else
