@@ -191,6 +191,13 @@ public class MarchingCubes : MonoBehaviour
         int height = chunkSize * (int)wordlSize.y + 1;
         x *= perlinDensity;
         z *= perlinDensity;
+        
+        if (WorldGenerator.Instance.RandomGeneration)
+        {
+            x += WorldGenerator.Instance.randomNoiseOffsetVector.x;
+            z += WorldGenerator.Instance.randomNoiseOffsetVector.z;
+        }
+        
         float xzPerlinHeight = Mathf.PerlinNoise(x, z);
 
         if (height * xzPerlinHeight > y)
@@ -206,6 +213,12 @@ public class MarchingCubes : MonoBehaviour
         x *= perlinDensity;
         y *= perlinDensity;
         z *= perlinDensity;
+        if (WorldGenerator.Instance.RandomGeneration)
+        {
+            x += WorldGenerator.Instance.randomNoiseOffsetVector.x;
+            y += WorldGenerator.Instance.randomNoiseOffsetVector.y;
+            z += WorldGenerator.Instance.randomNoiseOffsetVector.z;
+        }
         float XY = Mathf.PerlinNoise(x, y);
         float XZ = Mathf.PerlinNoise(x, z);
         float YX = Mathf.PerlinNoise(y, x);

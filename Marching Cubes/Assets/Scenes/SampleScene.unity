@@ -503,13 +503,18 @@ MonoBehaviour:
 
     Refresh generation - R
 
+    Toggle random
+    terrain generation - F
+
 
     Movement - WASD
 
-    Up
-    - Space
+    Up - Space
 
-    Down - Ctrl'
+    Down - Ctrl
+
+    Faster
+    movement - Shift'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -3223,10 +3228,10 @@ MonoBehaviour:
   m_FillRect: {fileID: 529273778}
   m_HandleRect: {fileID: 1689222143}
   m_Direction: 0
-  m_MinValue: 0
-  m_MaxValue: 1
+  m_MinValue: 0.01
+  m_MaxValue: 0.5
   m_WholeNumbers: 0
-  m_Value: 0
+  m_Value: 0.1
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -3697,6 +3702,10 @@ PrefabInstance:
     - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
       propertyPath: WorldSize.z
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      propertyPath: RandomGeneration
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8851554039414183036, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
       propertyPath: m_Name

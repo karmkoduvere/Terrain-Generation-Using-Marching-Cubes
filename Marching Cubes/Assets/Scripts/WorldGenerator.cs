@@ -14,6 +14,10 @@ public class WorldGenerator : MonoBehaviour
     public MarchingCubes ChunkPrefab;
     public NoiseGenerator NoiseGenerator = NoiseGenerator.PerlinNoise3D;
     public Material Material;
+    
+    public bool RandomGeneration = false;
+    [HideInInspector]
+    public Vector3 randomNoiseOffsetVector;
 
 
     private void Awake()
@@ -28,6 +32,7 @@ public class WorldGenerator : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.F)) RandomGeneration = !RandomGeneration;
         if (Input.GetKeyDown(KeyCode.R)) Refresh();
     }
 
@@ -36,6 +41,17 @@ public class WorldGenerator : MonoBehaviour
         for (int i = 0; i < transform.childCount; i++)
         {
             Destroy(transform.GetChild(i).gameObject);
+        }
+
+        if (RandomGeneration)
+        {
+            randomNoiseOffsetVector = new Vector3(Random.Range(0, WorldSize.x),
+                                                Random.Range(0, WorldSize.y),
+                                                Random.Range(0, WorldSize.z)) * 4;
+        }
+        else
+        {
+            randomNoiseOffsetVector = Vector3.zero;
         }
         Generate();
     }
