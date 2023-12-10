@@ -9,7 +9,6 @@ public class MarchingCubes : MonoBehaviour
     public GameObject Marker;
     public bool Mark;
 
-
     private Vector3 wordlSize;
     private int chunkSize;
     private float perlinDensity;
@@ -36,8 +35,8 @@ public class MarchingCubes : MonoBehaviour
         noisePoints = CreatePoints(offset);
 
         // Add 4 LOD levels
-        LOD[] lods = new LOD[4];
-        for (int i = 0; i < 4; i++)
+        LOD[] lods = new LOD[3];
+        for (int i = 0; i < lods.Length; i++)
         {
             GameObject chunkLOD = Instantiate(
                 ChunkLODPrefab,
@@ -79,9 +78,11 @@ public class MarchingCubes : MonoBehaviour
 
                         if (!verticeMap.ContainsKey(vertex))
                         {
-                            if (Mark) Instantiate(Marker, new Vector3(x, y, z) + CalcVertexPos(x, y, z, el, LOD) * LOD, Quaternion.identity, chunk.transform);
+                            //if (Mark) Instantiate(Marker, new Vector3(x, y, z) + CalcVertexPos(x, y, z, el, LOD) * LOD, Quaternion.identity, chunk.transform);
+                            if (Mark) Instantiate(Marker, new Vector3(x, y, z) + cubeEdgeOffset[el] * LOD, Quaternion.identity, chunk.transform);
 
-                            newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(x, y, z, el,LOD)*LOD);// Change to cubeEdgeOffset[el]*LOD for sharp edges
+                            newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(x, y, z, el,LOD)*LOD);
+                            //newVertices.Add(new Vector3(x, y, z) + cubeEdgeOffset[el]*LOD); // Sharp edge version
                             verticeMap[vertex] = step++;
                             float colorValueX = (vertex.x + chunkSize * offset.x) / (wordlSize.x * chunkSize);
                             float colorValueY = (vertex.y + chunkSize * offset.y) / (wordlSize.y * chunkSize);

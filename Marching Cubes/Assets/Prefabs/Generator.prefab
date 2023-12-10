@@ -48,5 +48,6 @@ MonoBehaviour:
   PerlinDensity: 0.05
   NoiseCutOff: 0.47
   ChunkPrefab: {fileID: 7422994743425736440, guid: 49fa7cca77808b24da797d593502bdf8, type: 3}
+  ChunkGPUPrefab: {fileID: 1882816990806145823, guid: 75bb7b0df4e8f9b4fa288cb254852c6b, type: 3}
   NoiseGenerator: 0
   Material: {fileID: 2100000, guid: 9f7df9bf3e9b3814c8c91935636a1d2f, type: 2}
