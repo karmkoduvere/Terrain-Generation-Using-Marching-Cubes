@@ -172,6 +172,10 @@ public class MarchingCubes : MonoBehaviour
                         else if (noiseGenerator == NoiseGenerator.Perlid2DX3D)
                         {
                             points[z][y][x] = PerlinNoise2DX3D(x + xOffset, y + yOffset, z + zOffset);
+                        } 
+                        else if (noiseGenerator == NoiseGenerator.PerlinNoise2DLayered)
+                        {
+                            points[z][y][x] = PerlinNoise2DLayered(x + xOffset, y + yOffset, z + zOffset);
                         }
                     }
                 }
@@ -199,6 +203,33 @@ public class MarchingCubes : MonoBehaviour
         }
         
         float xzPerlinHeight = Mathf.PerlinNoise(x, z);
+
+        if (height * xzPerlinHeight > y)
+        {
+            if (height * xzPerlinHeight - y < 1.0) return height * xzPerlinHeight - y;
+            return 1;
+        }
+        return 0;
+    }
+
+    private float PerlinNoise2DLayered(float x, float y, float z)
+    {
+        int height = chunkSize * (int)wordlSize.y + 1;
+        x *= perlinDensity;
+        z *= perlinDensity;
+
+        float x_layer = (x / 4) * perlinDensity;
+        float z_layer = (z / 4) * perlinDensity;
+
+        if (WorldGenerator.Instance.RandomGeneration)
+        {
+            x += WorldGenerator.Instance.randomNoiseOffsetVector.x;
+            z += WorldGenerator.Instance.randomNoiseOffsetVector.z;
+            x_layer += WorldGenerator.Instance.randomNoiseOffsetVector.x;
+            z_layer += WorldGenerator.Instance.randomNoiseOffsetVector.z;
+        }
+
+        float xzPerlinHeight = (0.4f * Mathf.PerlinNoise(x, z)) + (0.6f * Mathf.PerlinNoise(x_layer, z_layer));
 
         if (height * xzPerlinHeight > y)
         {

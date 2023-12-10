@@ -5,5 +5,6 @@ namespace DefaultNamespace
         PerlinNoise3D = 0,
         PerlinNoise2D = 1,
         Perlid2DX3D = 2,
+        PerlinNoise2DLayered = 3
     }
 }
