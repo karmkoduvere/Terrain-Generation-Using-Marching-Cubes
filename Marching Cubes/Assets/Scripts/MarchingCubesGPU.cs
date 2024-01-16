@@ -1,9 +1,5 @@
 using DefaultNamespace;
-using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class MarchingCubesGPU : MonoBehaviour
@@ -123,20 +119,42 @@ public class MarchingCubesGPU : MonoBehaviour
         num3 += (Time.realtimeSinceStartup - time);
         
         time = Time.realtimeSinceStartup;
-        
+
         //List<Vector3> newVertices = new();
         //List<int> newTriangles = new();
         //List<UnityEngine.Color> newColors = new();
 
-        Vector3[] newVertices = new Vector3[counter[0] * 3];
-        int[] newTriangles = new int[counter[0] * 3];
-        UnityEngine.Color[] newColors = new UnityEngine.Color[counter[0] * 3];
+        int arraySize = counter[0] * 3;
+        Vector3[] newVertices = new Vector3[arraySize];
+        int[] newTriangles = new int[arraySize];
+        Color[] newColors = new Color[arraySize];
 
         Dictionary<Vector3, int> verticeMap = new();
 
         int step = 0;
         int triStep = 0;
+        for (int i = 0; i < counter[0]; i++)
+        {
+            Triangle triangle = vertexDataArray[i];
+            if (triangle.Equals(default(Triangle))) break;
 
+            ProcessVertex(triangle.vertex1, triangle.color1);
+            ProcessVertex(triangle.vertex2, triangle.color2);
+            ProcessVertex(triangle.vertex3, triangle.color3);
+        }
+
+        void ProcessVertex(Vector3 vertex, Vector3 color)
+        {
+            if (!verticeMap.TryGetValue(vertex, out int index))
+            {
+                newVertices[step] = vertex;
+                newColors[step] = Color.HSVToRGB(color.x, color.y, color.z);
+                verticeMap[vertex] = index = step++;
+            }
+            newTriangles[triStep++] = index;
+        }
+
+        /*
         for (int i = 0; i < counter[0]; i++)
         {
             Triangle triangle = vertexDataArray[i];
@@ -165,7 +183,8 @@ public class MarchingCubesGPU : MonoBehaviour
                 verticeMap[triangle.vertex3] = step++;
             }
             newTriangles[triStep++] = verticeMap[triangle.vertex3];
-        }
+        }*/
+
         /*
          int step = 0;
 

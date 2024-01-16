@@ -38,7 +38,18 @@ public class WorldGenerator : MonoBehaviour
         {
             Destroy(transform.GetChild(i).gameObject);
         }
-        //Generate();
+        Generate();
+
+        float sum1 = 0;
+        for (int i = 0; i < 5; i++)
+        {
+            float time = Time.realtimeSinceStartup;
+            GameObject temp = Generate();
+            sum1 += (Time.realtimeSinceStartup - time);
+            Destroy(temp);
+        }
+        print(sum1 / 5);
+        /*
         //GenerateOnGPU();
 
         
@@ -48,11 +59,11 @@ public class WorldGenerator : MonoBehaviour
         GameObject temp;
         for (int i = 0; i < 5; i++)
         {
-            /*
+            
             time = Time.realtimeSinceStartup;
             temp = Generate();
             sum1 += (Time.realtimeSinceStartup - time);
-            Destroy(temp);*/
+            Destroy(temp);
             time = Time.realtimeSinceStartup;
             temp = GenerateOnGPU();
             sum2 += (Time.realtimeSinceStartup - time);
@@ -66,8 +77,14 @@ public class WorldGenerator : MonoBehaviour
 
         print(MarchingCubesGPU.num1 / 5 + MarchingCubesGPU.num2 / 5 + MarchingCubesGPU.num3 / 5 + MarchingCubesGPU.num4 / 5 + MarchingCubesGPU.num5 / 5);
 
+        print(" ");
+        print("createNoise: " + MarchingCubes.num1 / 5);
+        print("Marching: " + MarchingCubes.num2 / 5);
+        print("Data to mesh: " + MarchingCubes.num3 / 5);
+
+        print(" ");
         print("CPU: "+sum1 / 5);
-        print("GPU: " +sum2 / 5);
+        print("GPU: " +sum2 / 5);*/
     }
 
     GameObject Generate()
