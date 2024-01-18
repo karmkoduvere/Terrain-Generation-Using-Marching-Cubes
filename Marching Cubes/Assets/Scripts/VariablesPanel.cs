@@ -6,12 +6,12 @@ using UnityEngine.UIElements;
 
 public class VariablesPanel : MonoBehaviour
 {
-    public UnityEngine.UI.Slider perlinDensity;
+    public UnityEngine.UI.Slider NoiseScale;
     // Start is called before the first frame update
     public void Start()
     {
-        perlinDensity.value = WorldGenerator.Instance.PerlinDensity;
-        perlinDensity.onValueChanged.AddListener(delegate { SetPerlinDensity(); });
+        NoiseScale.value = WorldGenerator.Instance.NoiseScale;
+        NoiseScale.onValueChanged.AddListener(delegate { SetNoiseScale(); });
     }
 
     // Update is called once per frame
@@ -20,8 +20,8 @@ public class VariablesPanel : MonoBehaviour
 
     }
 
-    public void SetPerlinDensity()
+    public void SetNoiseScale()
     {
-        WorldGenerator.Instance.PerlinDensity = perlinDensity.value;
+        WorldGenerator.Instance.NoiseScale = (int)NoiseScale.value;
     }
 }

@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7493323866157414365}
   - component: {fileID: 7411572978941624651}
-  - component: {fileID: 4859546426336871649}
+  - component: {fileID: -7360744968232707757}
   m_Layer: 0
-  m_Name: Chunk 1
+  m_Name: Chunk 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -57,7 +57,7 @@ LODGroup:
     fadeTransitionWidth: 0
     renderers: []
   m_Enabled: 1
---- !u!114 &4859546426336871649
+--- !u!114 &-7360744968232707757
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -66,11 +66,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 2595163833570599107}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cac3347d1f2c53342bf0720db5e82dad, type: 3}
+  m_Script: {fileID: 11500000, guid: 38df2228942b87e42becd2b56e0c24cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  computeShader: {fileID: 7200000, guid: a7530ede418da57438941c7b4e956dda, type: 3}
   ChunkLODPrefab: {fileID: 4135903743341575070, guid: 30642f62e726a7a4ba887ac2065a3d37, type: 3}
   Marker: {fileID: 6189202600731047229, guid: 6d9482a9b9f5e5f4aae7ef5a1371eca5, type: 3}
   Mark: 0
+  computeShader: {fileID: 7200000, guid: 75419d5316f0edb4bac86c435e819172, type: 3}
   noiseTexture: {fileID: 0}

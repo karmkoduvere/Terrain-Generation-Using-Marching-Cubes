@@ -671,6 +671,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 529273777}
   m_CullTransparentMesh: 1
+--- !u!1 &531270827 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8851554039414183036, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+  m_PrefabInstance: {fileID: 8763474631146268494}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &531270830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 531270827}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e23ef910b6f5e1b42998813cd630f139, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &540213947
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1797,13 +1814,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.39634687, y: 0, z: 0, w: 0.91810083}
+  m_LocalPosition: {x: 60, y: 100, z: -20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 46.7, y: 0, z: 0}
 --- !u!114 &963194229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1811,7 +1828,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 54b0662db155194498d57c9f2490a13f, type: 3}
   m_Name: 
@@ -2587,7 +2604,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7de7336e826e45e4eacd9a71c7ad1285, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  perlinDensity: {fileID: 1587731976}
+  NoiseScale: {fileID: 0}
 --- !u!1 &1380283993
 GameObject:
   m_ObjectHideFlags: 0
@@ -3740,6 +3757,14 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      propertyPath: NoiseScale
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      propertyPath: NoiseCutOff
+      value: 0.47
+      objectReference: {fileID: 0}
+    - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
       propertyPath: WorldSize.x
       value: 5
       objectReference: {fileID: 0}
@@ -3755,6 +3780,18 @@ PrefabInstance:
       propertyPath: PerlinDensity
       value: 0.1
       objectReference: {fileID: 0}
+    - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      propertyPath: ChunkGPUPrefab
+      value: 
+      objectReference: {fileID: 4859546426336871649, guid: 75bb7b0df4e8f9b4fa288cb254852c6b, type: 3}
+    - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      propertyPath: NoiseGenerator
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7640347226985929050, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      propertyPath: ChunkGPUExperimentalPrefab
+      value: 
+      objectReference: {fileID: -7360744968232707757, guid: d47b8604a16616b448a722bdae6b13b2, type: 3}
     - target: {fileID: 8851554039414183036, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
       propertyPath: m_Name
       value: Generator
@@ -3766,7 +3803,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8851554039414183036, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 531270830}
   m_SourcePrefab: {fileID: 100100000, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

@@ -23,6 +23,10 @@ struct Triangle
 
 AppendStructuredBuffer<Triangle> triangles;
 
+RWStructuredBuffer<float> test;
+RWStructuredBuffer<uint> counterBuffer;
+
+
 float3 CalcVertexPos(uint3 coords, int n);
 float3 CalcColor(float3 vertex);
 
@@ -58,12 +62,20 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         t.vertex1 = CalcVertexPos(id, cube[el + 2]);
         //*/
         
+        //t.color1 = CalcColor(t.vertex1);
         t.color1 = CalcColor(t.vertex1);
         t.color2 = CalcColor(t.vertex2);
         t.color3 = CalcColor(t.vertex3);
         
         triangles.Append(t);
     }
+    
+    int pos;
+    InterlockedAdd(counterBuffer[0], 3, pos);
+    
+    test[pos] = 1.0f;
+    test[pos+1] = 2.0f;
+    test[pos+2] = 3.0f;
 }
 
 
