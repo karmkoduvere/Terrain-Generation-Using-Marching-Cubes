@@ -1,0 +1,102 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#include "Tables.compute"
+
+Texture3D<float> NoiseTextrure;
+float noiseCutOff;
+uint LOD;
+uint chunkSize;
+
+int3 offset;
+int3 wordlSize;
+
+struct Triangle
+{
+    float3 vertex1;
+    float3 vertex2;
+    float3 vertex3;
+    
+    float3 color1;
+    float3 color2;
+    float3 color3;
+};
+
+AppendStructuredBuffer<Triangle> triangles;
+
+RWStructuredBuffer<float> test;
+RWStructuredBuffer<uint> counterBuffer;
+
+
+float3 CalcVertexPos(uint3 coords, int n);
+float3 CalcColor(float3 vertex);
+
+[numthreads(4, 4, 4)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x < 0|| id.y < 0 || id.z < 0|| 
+        id.x >= chunkSize / LOD || id.y >= chunkSize / LOD || id.z >= chunkSize / LOD)
+        return;
+
+    int index = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        if (NoiseTextrure[(id + vertices[i]) * LOD] < noiseCutOff)
+        {
+            index |= (1 << i);
+        }
+    }
+	
+    int cube[] = triangleTable[index];
+	
+    for (int el = 0; cube[el] != -1; el += 3)
+    {
+        Triangle t;
+        /* // Sharp edge version
+        t.vertex3 = (id + cubeEdgeOffset[cube[el]]) * LOD;
+        t.vertex2 = (id + cubeEdgeOffset[cube[el + 1]]) * LOD;
+        t.vertex1 = (id + cubeEdgeOffset[cube[el + 2]]) * LOD;
+        */
+        ///*
+        t.vertex3 = CalcVertexPos(id, cube[el]);
+        t.vertex2 = CalcVertexPos(id, cube[el + 1]);
+        t.vertex1 = CalcVertexPos(id, cube[el + 2]);
+        //*/
+        
+        //t.color1 = CalcColor(t.vertex1);
+        t.color1 = CalcColor(t.vertex1);
+        t.color2 = CalcColor(t.vertex2);
+        t.color3 = CalcColor(t.vertex3);
+        
+        triangles.Append(t);
+    }
+    
+    int pos;
+    InterlockedAdd(counterBuffer[0], 3, pos);
+    
+    test[pos] = 1.0f;
+    test[pos+1] = 2.0f;
+    test[pos+2] = 3.0f;
+}
+
+
+float3 CalcColor(float3 vertex)
+{
+    float colorValueX = (vertex.x + offset.x) / wordlSize.x;
+    float colorValueY = (vertex.y + offset.y) / wordlSize.y;
+    float colorValueZ = (vertex.z + offset.z) / wordlSize.z;
+    return float3(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY);
+}
+
+
+float3 CalcVertexPos(uint3 coords, int n)
+{
+    uint3 pointA = (coords + vertices[edgeVertexIndices[n][0]]) * LOD;
+    uint3 pointB = (coords + vertices[edgeVertexIndices[n][1]]) * LOD;
+    
+    float pos = (noiseCutOff - NoiseTextrure[pointA]) / (NoiseTextrure[pointB] - NoiseTextrure[pointA]);
+    
+    if (isinf(pos))
+        return float3(0, 0, 0);
+    
+    return pointA + pos * (pointB - pointA);
+}

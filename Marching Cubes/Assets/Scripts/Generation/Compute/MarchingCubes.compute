@@ -1,0 +1,168 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMarchingCubes
+#include "Tables.compute"
+
+float noiseCutOff;
+uint LOD;
+uint chunkSize;
+
+int3 inChunkOffset;
+int3 offset;
+int3 worldSize;
+
+RWStructuredBuffer<float> noisePoints;
+
+RWStructuredBuffer<float3> triangelVertices;
+RWStructuredBuffer<float4> colors;
+RWStructuredBuffer<uint> triangels;
+
+RWStructuredBuffer<uint> verticeMap;
+RWStructuredBuffer<uint> vertexCounter;
+RWStructuredBuffer<uint> triangleCounter;
+
+float3 CalcVertexPos(uint3 coords, int n);
+float4 CalcColor(float3 vertex);
+uint CalcPos(float3 vertex);
+uint Index(uint3 id);
+
+[numthreads(4, 4, 4)]
+void CSMarchingCubes(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x < 0 || id.y < 0 || id.z < 0 ||
+        id.x >= chunkSize / LOD || id.y >= chunkSize / LOD || id.z >= chunkSize / LOD)
+        return;
+    
+    if ((id.x + inChunkOffset.x) % 2 != 0 ||
+        (id.y + inChunkOffset.y) % 2 != 0 ||
+        (id.z + inChunkOffset.z) % 2 != 0)
+        return;
+    
+    int index = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        if (noisePoints[Index((id + vertices[i]) * LOD)] <= noiseCutOff)
+        {
+            index |= (1 << i);
+        }
+    }
+    
+    int cube[] = triangleTable[index];
+    for (int el = 0; cube[el] != -1; el += 3)
+    {
+        uint3 vertex3 = (id + cubeEdgeOffset[cube[el]]) * 2;
+        uint3 vertex2 = (id + cubeEdgeOffset[cube[el + 1]]) * 2;
+        uint3 vertex1 = (id + cubeEdgeOffset[cube[el + 2]]) * 2;
+        
+        float3 newVertex3;
+        float3 newVertex2;
+        float3 newVertex1;
+        
+        float4 newColor3;
+        float4 newColor2;
+        float4 newColor1;
+        
+        bool v3 = false;
+        bool v2 = false;
+        bool v1 = false;
+        
+        uint index3 = CalcPos(vertex3);
+        uint index2 = CalcPos(vertex2);
+        uint index1 = CalcPos(vertex1);
+        
+        uint vertice3Pos = verticeMap[index3];
+        uint vertice2Pos = verticeMap[index2];
+        uint vertice1Pos = verticeMap[index1];
+        
+        uint newVertices = 0;
+        if (vertice3Pos == 0)
+        {
+            newVertices++;
+            v3 = true;
+            newVertex3 = CalcVertexPos(id, cube[el]);
+            newColor3 = CalcColor(newVertex3);
+        }
+        if (vertice2Pos == 0)
+        {
+            newVertices++;
+            v2 = true;
+            newVertex2 = CalcVertexPos(id, cube[el + 1]);
+            newColor2 = CalcColor(newVertex2);
+        }
+        if (vertice1Pos == 0)
+        {
+            newVertices++;
+            v1 = true;
+            newVertex1 = CalcVertexPos(id, cube[el + 2]);
+            newColor1 = CalcColor(newVertex1);
+        }
+        
+        if (newVertices > 0)
+        {
+            uint pos;
+            InterlockedAdd(vertexCounter[0], newVertices, pos);
+            
+            if (v3)
+            {
+                triangelVertices[pos] = newVertex3;
+                verticeMap[index3] = pos;
+                vertice3Pos = pos;
+                colors[pos++] = newColor3;
+            }
+            if (v2)
+            {
+                triangelVertices[pos] = newVertex2;
+                verticeMap[index2] = pos;
+                vertice2Pos = pos;
+                colors[pos++] = newColor2;
+            }
+            if (v1)
+            {
+                triangelVertices[pos] = newVertex1;
+                verticeMap[index1] = pos;
+                vertice1Pos = pos;
+                colors[pos++] = newColor1;
+            }
+        }
+        
+        uint tpos;
+        InterlockedAdd(triangleCounter[0], 3, tpos);
+        
+        triangels[tpos] = vertice1Pos;
+        triangels[tpos+1] = vertice2Pos;
+        triangels[tpos+2] = vertice3Pos;
+    }
+}
+
+uint CalcPos(float3 vertex)
+{
+    uint size = 2 * (chunkSize / LOD + 1);
+    return vertex.x + vertex.y * size + vertex.z * pow(size, 2);
+}
+
+uint Index(uint3 id)
+{
+    uint size = chunkSize + 1;
+    return id.x + id.y * size + id.z * pow(size, 2);
+}
+
+float4 CalcColor(float3 vertex)
+{
+    float colorValueX = (vertex.x + offset.x) / worldSize.x;
+    float colorValueY = (vertex.y + offset.y) / worldSize.y;
+    float colorValueZ = (vertex.z + offset.z) / worldSize.z;
+    return float4(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY,1.0f);
+}
+
+
+float3 CalcVertexPos(uint3 coords, int n)
+{
+    uint3 pointA = (coords + vertices[edgeVertexIndices[n][0]]) * LOD;
+    uint3 pointB = (coords + vertices[edgeVertexIndices[n][1]]) * LOD;
+   
+    float pos = (noiseCutOff - noisePoints[Index(pointA)]) / (noisePoints[Index(pointB)] - noisePoints[Index(pointA)]);
+    
+    if (isinf(pos))
+        return float3(0, 0, 0);
+    
+    return pointA + pos * (pointB - pointA);
+}
