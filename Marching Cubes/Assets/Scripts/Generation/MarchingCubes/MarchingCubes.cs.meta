@@ -3,7 +3,9 @@ guid: 1e79eb77e19b9004f8ee416b9cbc479f
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - ChunkLODPrefab: {fileID: 4135903743341575070, guid: 30642f62e726a7a4ba887ac2065a3d37, type: 3}
+  - Marker: {fileID: 6189202600731047229, guid: 6d9482a9b9f5e5f4aae7ef5a1371eca5, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

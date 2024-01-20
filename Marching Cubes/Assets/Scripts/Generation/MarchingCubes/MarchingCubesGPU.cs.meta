@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 38df2228942b87e42becd2b56e0c24cb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - ChunkLODPrefab: {fileID: 4135903743341575070, guid: 30642f62e726a7a4ba887ac2065a3d37, type: 3}
+  - computeShader: {fileID: 7200000, guid: 75419d5316f0edb4bac86c435e819172, type: 3}
+  - noiseShader: {fileID: 7200000, guid: 85cf09ec05a48dc4090c66ff694f52e4, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

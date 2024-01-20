@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5aa432813ad13bd42b28a195f46f8a7a, type: 3}
-  m_Name: Perlin3D
+  m_Name: Simplex3D
   m_EditorClassIdentifier: 
   NoiseGenerator: 0
-  MenuName: Perlin noise 3D
+  MenuName: Simplex3D

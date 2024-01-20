@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
-using DefaultNamespace;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
-
 
 public class MarchingCubes : MonoBehaviour
 {
@@ -10,7 +9,7 @@ public class MarchingCubes : MonoBehaviour
     public GameObject Marker;
     public bool Mark;
 
-    private Vector3 wordlSize;
+    private Vector3Int worldSize;
     private int chunkSize;
     private Material material;
 
@@ -19,23 +18,22 @@ public class MarchingCubes : MonoBehaviour
     private float[] LODTrainsitionDistances = new float[] { 0.4f, 0.2f, 0.1f, 0.05f }; // Array of distances for LOD transitions
     private LODGroup group;
 
-    public static float num1 = 0;
-    public static float num2 = 0;
-    public static float num3 = 0;
+    private List<Vector3> newVertices = new();
+    private List<int> newTriangles = new();
+    private List<Color> colors = new();
+    private Dictionary<Vector3, int> verticeMap = new();
 
     public void Generate(Vector3 offset)
     {
-        wordlSize = WorldGenerator.Instance.WorldSize;
+        worldSize = WorldGenerator.Instance.WorldSize;
         chunkSize = WorldGenerator.Instance.chunkSize;
         material = WorldGenerator.Instance.Material;
         group = gameObject.GetComponent<LODGroup>();
 
-        float time = Time.realtimeSinceStartup;
-        noisePoints = Noise.instance.CreateNoisePoints2(offset);
-        num1 += Time.realtimeSinceStartup - time;
+        CreateNoisePoints(offset);
 
         // Add 4 LOD levels
-        LOD[] lods = new LOD[1];
+        LOD[] lods = new LOD[4];
         for (int i = 0; i < lods.Length; i++)
         {
             GameObject chunkLOD = Instantiate(
@@ -55,13 +53,6 @@ public class MarchingCubes : MonoBehaviour
 
     public void GenerateChunk(Vector3 offset, int LOD, GameObject chunk)
     {
-        float time = Time.realtimeSinceStartup;
-        List<Vector3> newVertices = new();
-        List<int> newTriangles = new();
-        List<Color> colors = new();
-
-        Dictionary<Vector3, int> verticeMap = new();
-
         // "Marches" over the chunk, at every point gets TriangeTable index based on
         // the generated points and then adds new vertices and triangles to the list.
         int step = 0;
@@ -85,9 +76,9 @@ public class MarchingCubes : MonoBehaviour
                             newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(new Vector3Int(x,y,z), el,LOD)*LOD);
                             //newVertices.Add(new Vector3(x, y, z) + cubeEdgeOffset[el]*LOD); // Sharp edge version
                             verticeMap[vertex] = step++;
-                            float colorValueX = (vertex.x + chunkSize * offset.x) / (wordlSize.x * chunkSize);
-                            float colorValueY = (vertex.y + chunkSize * offset.y) / (wordlSize.y * chunkSize);
-                            float colorValueZ = (vertex.z + chunkSize * offset.z) / (wordlSize.z * chunkSize);
+                            float colorValueX = (vertex.x + chunkSize * offset.x) / (worldSize.x * chunkSize);
+                            float colorValueY = (vertex.y + chunkSize * offset.y) / (worldSize.y * chunkSize);
+                            float colorValueZ = (vertex.z + chunkSize * offset.z) / (worldSize.z * chunkSize);
                             colors.Add(Color.HSVToRGB(colorValueX / 2 + colorValueZ / 2, colorValueY * 1 / 3 + 0.25f, colorValueY));
                         }
 
@@ -96,8 +87,6 @@ public class MarchingCubes : MonoBehaviour
                 }
             }
         }
-        num2 += Time.realtimeSinceStartup - time;
-        time = Time.realtimeSinceStartup;
 
         Mesh mesh = new();
 
@@ -109,7 +98,49 @@ public class MarchingCubes : MonoBehaviour
         chunk.GetComponent<MeshFilter>().mesh = mesh;
         chunk.GetComponent<MeshRenderer>().material = material;
 
-        num3 += Time.realtimeSinceStartup - time;
+        newVertices.Clear();
+        newTriangles.Clear();
+        colors.Clear();
+        verticeMap.Clear();
+    }
+
+    public float[,,] CreateNoisePoints(Vector3 offset)
+    {
+        NativeArray<float> points = new((chunkSize + 1) * (chunkSize + 1) * (chunkSize + 1), Allocator.TempJob);
+
+        GenerateNoiseJob job = new GenerateNoiseJob
+        {
+            chunkSize = chunkSize,
+            worldSize = worldSize,
+            xOffset = chunkSize * (int)offset.x,
+            yOffset = chunkSize * (int)offset.y,
+            zOffset = chunkSize * (int)offset.z,
+            noiseGenerator = WorldGenerator.Instance.NoiseGenerator,
+            points = points,
+            noiseFrequency = WorldGenerator.Instance.NoiseScale / 100f
+        };
+
+        JobHandle jobHandle = job.Schedule(points.Length, 64);
+
+        jobHandle.Complete();
+
+        float[,,] points3D = new float[chunkSize + 1, chunkSize + 1, chunkSize + 1];
+
+        for (int z = 0; z < chunkSize + 1; z++)
+        {
+            for (int y = 0; y < chunkSize + 1; y++)
+            {
+                for (int x = 0; x < chunkSize + 1; x++)
+                {
+                    int index = x + (chunkSize + 1) * (y + (chunkSize + 1) * z);
+                    points3D[z, y, x] = points[index];
+                }
+            }
+        }
+
+        points.Dispose();
+
+        return points3D;
     }
 
     Vector3 CalcVertexPos(Vector3Int coords, int n, int LOD)
@@ -117,7 +148,7 @@ public class MarchingCubes : MonoBehaviour
         Vector3Int pointA = coords + Tables.vertices[Tables.edgeVertexIndices[n][0]] * LOD;
         Vector3Int pointB = coords + Tables.vertices[Tables.edgeVertexIndices[n][1]] * LOD;
 
-        float pos = (WorldGenerator.Instance.NoiseCutOff - noisePoints[pointA.z,pointA.y,pointA.x]) /
+        float pos = - noisePoints[pointA.z,pointA.y,pointA.x] /
             (noisePoints[pointB.z, pointB.y, pointB.x] - noisePoints[pointA.z,pointA.y,pointA.x]);
 
         return n switch
@@ -136,7 +167,7 @@ public class MarchingCubes : MonoBehaviour
         for (int i = 0; i < 8; i++)
         {
             Vector3Int coord = coords + Tables.vertices[i] * LOD;
-            if (!(noisePoints[coord.z, coord.y, coord.x] < WorldGenerator.Instance.NoiseCutOff))
+            if (!(noisePoints[coord.z, coord.y, coord.x] < 0))
                 index |= (1 << i);
         }
         return index;

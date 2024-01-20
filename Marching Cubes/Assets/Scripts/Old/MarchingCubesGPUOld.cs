@@ -1,14 +1,24 @@
 using DefaultNamespace;
 using System;
 using System.Collections.Generic;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
-using UnityEngine.UIElements;
 
-public class MarchingCubesGPUExperimental : MonoBehaviour
+public class MarchingCubesGPUOld : MonoBehaviour
 {
+    public ComputeShader computeShader;
+    ComputeBuffer triangleBuffer;
+
+    struct Triangle
+    {
+        public Vector3 vertex1;
+        public Vector3 vertex2;
+        public Vector3 vertex3;
+        
+        public Vector3 color1;
+        public Vector3 color2;
+        public Vector3 color3;
+    };
+
     public GameObject ChunkLODPrefab;
     public GameObject Marker;
     public bool Mark;
@@ -24,22 +34,23 @@ public class MarchingCubesGPUExperimental : MonoBehaviour
     private float[] LODTrainsitionDistances = new float[] { 0.4f, 0.2f, 0.1f, 0.05f }; // Array of distances for LOD transitions
     private LODGroup group;
 
+    //public RenderTexture noiseTexture;
+    public Texture3D noiseTexture;
+    public ComputeBuffer triCountBuffer;
+    Triangle[] vertexDataArray;
+
     public static float num1 = 0;
     public static float num2 = 0;
     public static float num3 = 0;
     public static float num4 = 0;
     public static float num5 = 0;
 
-
-    public ComputeShader computeShader;
-    public Texture3D noiseTexture;
- 
     public void Generate(Vector3 offset)
     {
         wordlSize = WorldGenerator.Instance.WorldSize;
         chunkSize = WorldGenerator.Instance.chunkSize;
         perlinDensity = WorldGenerator.Instance.NoiseScale /100f;
-        noiseCutOff = WorldGenerator.Instance.NoiseCutOff;
+        noiseCutOff = 0.47f;
         noiseGenerator = WorldGenerator.Instance.NoiseGenerator;
         material = WorldGenerator.Instance.Material;
         group = gameObject.GetComponent<LODGroup>();
@@ -74,161 +85,146 @@ public class MarchingCubesGPUExperimental : MonoBehaviour
         group.RecalculateBounds();
     }
 
+    List<Vector3> newVertices = new();
+    List<int> newTriangles = new();
+    List<Color> newColors = new();
+    Dictionary<Vector3, int> verticeMap = new();
 
-
-    ComputeBuffer triangelVerticesBuffer;
-    ComputeBuffer triangelsBuffer;
-    ComputeBuffer colorsBuffer;
-
-    ComputeBuffer verticeMapBuffer;
-    ComputeBuffer vertexCounterBuffer;
-    ComputeBuffer triangleCounterBuffer;
-
-    /*
-     
-    RWTexture3D<uint> verticeMap;
-
-    RWStructuredBuffer<float3> triangelVertices;
-    RWStructuredBuffer<uint> triangels;
-    RWStructuredBuffer<float3> colors;
-
-    RWStructuredBuffer<uint> vertexCounter;
-    RWStructuredBuffer<uint> triangleCounter;
-     */
+    ComputeBuffer testCountBuffer;
+    ComputeBuffer testBuffer;
+    ComputeBuffer testCounter;
 
 
     public void GenerateChunkSmooth(int LOD, GameObject chunk)
     {
         float time = Time.realtimeSinceStartup;
 
-        int size = chunkSize / LOD;
-        int maxVerticeCount = 3 * (int)(MathF.Pow(size, 3) + 2 * MathF.Pow(size, 2) + size);
-        int maxTrianglesCount = 4 * (int)MathF.Pow(size, 3);
-        int verticeMapSize = (int)Mathf.Pow((size + 1) * 2, 3);
+        int count = (int)Mathf.Pow(chunkSize/LOD, 3f)*(LOD+1);
+        triangleBuffer = new ComputeBuffer(count, 72, ComputeBufferType.Append);// sizeof(float) * 4 * 6
+        triangleBuffer.SetCounterValue(0);
 
-        triangelVerticesBuffer = new ComputeBuffer(maxVerticeCount, sizeof(float) * 3, ComputeBufferType.Default);
-        triangelVerticesBuffer.SetCounterValue(0);
+        testBuffer = new ComputeBuffer(count*3, 4, ComputeBufferType.Default);// sizeof(float) * 4 * 6
+        testBuffer.SetCounterValue(0);
+        computeShader.SetBuffer(0, "test", testBuffer);
 
-        colorsBuffer = new ComputeBuffer(maxVerticeCount, sizeof(float) * 3, ComputeBufferType.Default);
-        colorsBuffer.SetCounterValue(0);
-
-        triangelsBuffer = new ComputeBuffer(maxTrianglesCount, sizeof(uint), ComputeBufferType.Default);
-        triangelsBuffer.SetCounterValue(0);
-
-        verticeMapBuffer = new ComputeBuffer(verticeMapSize, sizeof(uint), ComputeBufferType.Default);
-        verticeMapBuffer.SetCounterValue(0);
-
-        vertexCounterBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Raw);
-        vertexCounterBuffer.SetCounterValue(0);
-
-        triangleCounterBuffer = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Raw);
-        triangleCounterBuffer.SetCounterValue(0);
-
-        computeShader.SetBuffer(0, "triangelVertices", triangelVerticesBuffer);
-        computeShader.SetBuffer(0, "triangels", triangelsBuffer);
-        computeShader.SetBuffer(0, "colors", colorsBuffer);
-        computeShader.SetBuffer(0, "verticeMap", verticeMapBuffer);
-        computeShader.SetBuffer(0, "vertexCounter", vertexCounterBuffer);
-        computeShader.SetBuffer(0, "triangleCounter", triangleCounterBuffer);
+        testCounter = new ComputeBuffer(1, 4, ComputeBufferType.Raw);// sizeof(float) * 4 * 6
+        testCounter.SetCounterValue(0);
+        computeShader.SetBuffer(0, "counterBuffer", testCounter);
 
         computeShader.SetInt("LOD", LOD);
-
+        computeShader.SetBuffer(0, "triangles", triangleBuffer);
         //computeShader.Dispatch(0, chunkSize/LOD, chunkSize/LOD, chunkSize/LOD);
-
-        for (int x = 0; x < 2; x++)
-        {
-            for (int y = 0; y < 2; y++)
-            {
-                for (int z = 0; z < 2; z++)
-                {
-                    computeShader.SetVector("inChunkOffset", new Vector3(x,y,z));
-                    computeShader.Dispatch(0, chunkSize / LOD / 4, chunkSize / LOD / 4, chunkSize / LOD / 4);
-                }
-            }
-        }
+        computeShader.Dispatch(0, chunkSize / LOD / 4, chunkSize / LOD / 4, chunkSize / LOD / 4);
         
         num2 += Time.realtimeSinceStartup - time;
         time = Time.realtimeSinceStartup;
 
-        int[] vertexCounter = new int[1];
-        vertexCounterBuffer.GetData(vertexCounter);
 
-        int[] triangleCounter = new int[1];
-        triangleCounterBuffer.GetData(triangleCounter);
+        int[] counter = new int[1];
+        triCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
+        triCountBuffer.SetCounterValue(0);
+        ComputeBuffer.CopyCount(triangleBuffer, triCountBuffer, 0);
+        triCountBuffer.GetData(counter);
+        
+        vertexDataArray = new Triangle[counter[0]];
 
-        /*
-        Vector3[] vertexDataArray = new Vector3[vertexCounter[0]];
-        int[] triangleDataArray = new int[triangleCounter[0]];
-        //Vector3[] colorDataArray = new Vector3[vertexCounter[0]]
 
-        triangelVerticesBuffer.GetData(vertexDataArray, 0, 0, vertexCounter[0]);
-        triangelsBuffer.GetData(triangleDataArray, 0, 0, triangleCounter[0]);
-        */
+        triangleBuffer.GetData(vertexDataArray, 0, 0, counter[0]);
+
+        int[] counter2 = new int[1];
+        testCountBuffer = new ComputeBuffer(1, sizeof(int), ComputeBufferType.Raw);
+        testCountBuffer.SetCounterValue(0);
+        ComputeBuffer.CopyCount(testBuffer, testCountBuffer, 0);
+        testCountBuffer.GetData(counter2);
+
+        
+
+        float[] testDataArray = new float[count * 3];
+
+
+        testBuffer.GetData(testDataArray, 0, 0, count * 3);
+
+        //print(counter2[0]);
+        for (int i = 0; i < count * 3; i++)
+        {
+            //break;
+            if (testDataArray[i] != 1 && testDataArray[i] != 2 && testDataArray[i] != 3)
+            {
+                print(i);
+                print(count * 3 - i);
+                break;
+            }
+        }
 
         num3 += (Time.realtimeSinceStartup - time);
+        
+        time = Time.realtimeSinceStartup;
+
+        newVertices.Clear();
+        newTriangles.Clear();
+        newColors.Clear();
+        verticeMap.Clear();
+
+        int step = 0;
+        for (int i = 0; i < counter[0]; i++)
+        {
+            Triangle triangle = vertexDataArray[i];
+            if (triangle.Equals(default(Triangle))) break;
+
+            ProcessVertex(triangle.vertex1, triangle.color1);
+            ProcessVertex(triangle.vertex2, triangle.color2);
+            ProcessVertex(triangle.vertex3, triangle.color3);
+        }
+
+        void ProcessVertex(Vector3 vertex, Vector3 color)
+        {
+            if (!verticeMap.TryGetValue(vertex, out int index))
+            {
+                newVertices.Add(vertex);
+                newColors.Add(Color.HSVToRGB(color.x, color.y, color.z));
+                verticeMap[vertex] = index = step++;
+            }
+            newTriangles.Add(index);
+        }
+
+     
+        num4 += (Time.realtimeSinceStartup - time);
+        
         time = Time.realtimeSinceStartup;
 
         Mesh mesh = new();
 
-        TransferVertexData(mesh, vertexCounter[0]);
-        TransferIndexData(mesh, triangleCounter[0]);
-        
-
-        //mesh.SetVertices(vertexDataArray);
-        //mesh.SetTriangles(triangleDataArray, 0, true);
-        //mesh.SetColors(newColors);
-
-        num4 += (Time.realtimeSinceStartup - time);
-        time = Time.realtimeSinceStartup;
-
+        mesh.SetVertices(newVertices);
+        mesh.SetTriangles(newTriangles, 0, true);
+        mesh.SetColors(newColors);
         mesh.RecalculateNormals();
+
         chunk.GetComponent<MeshFilter>().mesh = mesh;
         chunk.GetComponent<MeshRenderer>().material = material;
 
         num5+=(Time.realtimeSinceStartup - time);
 
-        triangelVerticesBuffer.Release();
-        triangelsBuffer.Release();
-        colorsBuffer.Release();
+        triangleBuffer.Release();
+        triCountBuffer.Release();
 
-        verticeMapBuffer.Release();
-        vertexCounterBuffer.Release();
-        triangleCounterBuffer.Release();
+        testBuffer.Release();
+        testCountBuffer.Release();
+        testCounter.Release();
     }
-
-    private unsafe void TransferVertexData(Mesh mesh, int vertexCount)
+    
+    float GetIndex(Vector3 vertex)
     {
-        mesh.SetVertexBufferData(
-            NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<Vector3>(
-                triangelVerticesBuffer.GetNativeBufferPtr().ToPointer(),
-                vertexCount,
-                Allocator.Invalid),
-            0,
-            0,
-            vertexCount);
-    }
-
-    private unsafe void TransferIndexData(Mesh mesh, int indexCount)
-    {
-        mesh.SetIndexBufferData(
-            NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<Vector3>(
-                triangelsBuffer.GetNativeBufferPtr().ToPointer(),
-                indexCount,
-                Allocator.Invalid),
-            0,
-            0,
-            indexCount);
+        return (vertex.x + vertex.y * chunkSize + vertex.z * chunkSize * chunkSize);
     }
 
     private void OnDestroy()
     {
-        triangelVerticesBuffer.Release();
-        triangelsBuffer.Release();
-        colorsBuffer.Release();
+        triangleBuffer.Release();
+        triCountBuffer.Release();
 
-        verticeMapBuffer.Release();
-        vertexCounterBuffer.Release();
-        triangleCounterBuffer.Release();
+        testBuffer.Release();
+        testCountBuffer.Release();
+        testCounter.Release();
     }
 
     // Generates noise points with 3D array the size of lenght * height * depth
@@ -256,13 +252,9 @@ public class MarchingCubesGPUExperimental : MonoBehaviour
                         {
                             noiseValue = PerlinNoise3D(x + xOffset, y + yOffset, z + zOffset);
                         }
-                        else if (noiseGenerator == NoiseGenerator.PerlinNoise2D)
+                        else if (noiseGenerator == NoiseGenerator.SimplePerlinTerrain)
                         {
                             noiseValue = PerlinNoise2D(x + xOffset, y + yOffset, z + zOffset);
-                        }
-                        else if (noiseGenerator == NoiseGenerator.Perlid2DX3D)
-                        {
-                            noiseValue = PerlinNoise2DX3D(x + xOffset, y + yOffset, z + zOffset);
                         }
                     }
                     colors[x + y * (chunkSize + 1) + z * (chunkSize + 1)* (chunkSize + 1)] = new UnityEngine.Color(noiseValue, 0, 0, 1);

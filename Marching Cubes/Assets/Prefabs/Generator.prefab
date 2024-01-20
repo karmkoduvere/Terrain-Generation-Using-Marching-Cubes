@@ -45,9 +45,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   WorldSize: {x: 1, y: 1, z: 1}
-  PerlinDensity: 0.05
-  NoiseCutOff: 0.47
   ChunkPrefab: {fileID: 7422994743425736440, guid: 49fa7cca77808b24da797d593502bdf8, type: 3}
-  ChunkGPUPrefab: {fileID: 1882816990806145823, guid: 75bb7b0df4e8f9b4fa288cb254852c6b, type: 3}
-  NoiseGenerator: 0
+  ChunkGPUPrefab: {fileID: -7360744968232707757, guid: d47b8604a16616b448a722bdae6b13b2, type: 3}
   Material: {fileID: 2100000, guid: 9f7df9bf3e9b3814c8c91935636a1d2f, type: 2}
+  Octaves: 0
+  NoiseScale: 0
+  NoiseWeight: 0
+  WeightMultiplier: 0
+  FloorOffset: 0
+  HardFloor: 0
+  HardFloorWeight: 0
+  OffsetNoiseScale: 0
+  OffsetOctaves: 0
+  OffsetWeight: 0
+  NoiseGenerator: 0
