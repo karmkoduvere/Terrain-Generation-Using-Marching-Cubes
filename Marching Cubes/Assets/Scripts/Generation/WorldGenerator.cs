@@ -1,5 +1,4 @@
 using DefaultNamespace;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class WorldGenerator : MonoBehaviour
@@ -50,16 +49,20 @@ public class WorldGenerator : MonoBehaviour
     public NoiseGenerator NoiseGenerator = NoiseGenerator.Simplex3D;
     public OffsetNoiseGenerator OffsetNoiseGenerator = OffsetNoiseGenerator.OffsetType1;
 
-    [HideInInspector] public Vector3 NoiseOffset;
+    [HideInInspector] public Vector3 NoiseOffset = Vector3.zero;
+
+    private int initialSeed;
 
     private void Awake()
     {
         Instance = this;
+        initialSeed = Seed;
     }
 
     public void Start()
     {
-        //Refresh();
+        SetSeed();
+        MenuPresenter.Instance.UpdateOffsetToggleText(randomOffset);
     }
 
     private void GenerateTest(int x, int y, int z)
@@ -75,27 +78,41 @@ public class WorldGenerator : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.R)) Refresh();
-        else if (Input.GetKeyDown(KeyCode.E)) GenerateTest(testGen.x, testGen.y, testGen.z);
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            ToggleRandomOffset();
+            SetSeed();
+        }
     }
 
+    public void SetSeed()
+    {
+        if (randomOffset)
+        {
+            Seed = initialSeed;
+        }
+        else
+        {
+            Random.InitState((int) Time.time);
+            Seed = Random.Range(0, 1000);
+        }
+        CalculateNoiseOffset();
+    }
 
-    void Refresh()
+    void CalculateNoiseOffset()
     {
         Random.InitState(Seed);
         int maxvalue = 10000;
         NoiseOffset = new Vector3(Random.value * maxvalue, Random.value * maxvalue, Random.value * maxvalue);
-
-        for (int i = 0; i < transform.childCount; i++)
-        {
-            Destroy(transform.GetChild(i).gameObject);
-        }
-
-        float t = Time.realtimeSinceStartup;
-        GenerateOnGPU();
-        print(Time.realtimeSinceStartup - t);
     }
 
+    private bool randomOffset = false;
+    public void ToggleRandomOffset()
+    {
+        randomOffset = !randomOffset;
+        MenuPresenter.Instance.UpdateOffsetToggleText(randomOffset);
+    }
+    /*
     GameObject Generate()
     {
         GameObject chunks = new("Chunks");
@@ -144,5 +161,5 @@ public class WorldGenerator : MonoBehaviour
             }
         }
         return chunks;
-    }
+    }*/
 }
