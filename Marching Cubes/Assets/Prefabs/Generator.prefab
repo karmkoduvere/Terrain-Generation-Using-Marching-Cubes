@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6633319052940832976}
   - component: {fileID: 7640347226985929050}
+  - component: {fileID: 1512274312125508205}
   m_Layer: 0
   m_Name: Generator
   m_TagString: Untagged
@@ -48,6 +49,18 @@ MonoBehaviour:
   ChunkPrefab: {fileID: 7422994743425736440, guid: 49fa7cca77808b24da797d593502bdf8, type: 3}
   ChunkGPUPrefab: {fileID: -7360744968232707757, guid: d47b8604a16616b448a722bdae6b13b2, type: 3}
   Material: {fileID: 2100000, guid: 9f7df9bf3e9b3814c8c91935636a1d2f, type: 2}
+  GenerateEdges: 0
+  testGen: {x: 0, y: 0, z: 0}
+  Color1: {r: 0, g: 0, b: 1, a: 1}
+  Color2: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  Color3: {r: 0, g: 1, b: 0, a: 1}
+  Color4: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  Color5: {r: 1, g: 1, b: 1, a: 1}
+  colorCutoff1: 0.2
+  colorCutoff2: 0.4
+  colorCutoff3: 0.6
+  colorCutoff4: 0.7
+  Seed: 0
   Octaves: 0
   NoiseScale: 0
   NoiseWeight: 0
@@ -59,3 +72,19 @@ MonoBehaviour:
   OffsetOctaves: 0
   OffsetWeight: 0
   NoiseGenerator: 0
+  OffsetNoiseGenerator: 0
+  NoiseOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &1512274312125508205
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8851554039414183036}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9b6b8a4530bfac44b5966daa58ecbbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enable: 0
+  size: {x: 7, y: 7, z: 7}

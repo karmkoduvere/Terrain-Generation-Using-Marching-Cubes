@@ -59,7 +59,7 @@ public class WorldGenerator : MonoBehaviour
 
     public void Start()
     {
-        Refresh();
+        //Refresh();
     }
 
     private void GenerateTest(int x, int y, int z)

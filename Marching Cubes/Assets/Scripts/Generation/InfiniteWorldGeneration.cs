@@ -3,10 +3,11 @@ using UnityEngine;
 
 public class InfiniteWorldGeneration : MonoBehaviour
 {
+    public bool enable = false;
     public Vector3Int size;
-    private Vector3 playerPos;
 
-    public Dictionary<Vector3Int, MarchingCubesGPU> chunkMap;
+    private Vector3 playerPos;
+    private Dictionary<Vector3Int, MarchingCubesGPU> chunkMap;
     private GameObject chunks;
     private Vector3Int corner;
     private int chunkSize;
@@ -26,18 +27,21 @@ public class InfiniteWorldGeneration : MonoBehaviour
         WorldGenerator.Instance.GenerateEdges = false;
         playerPos = Camera.main.transform.position;
         corner = CalcCorner();
-        Generate();
+        if (enable) Generate();
     }
 
     void Update()
     {
-        playerPos = Camera.main.transform.position;
-        Vector3Int newCorner = CalcCorner();
-        if (corner != newCorner)
+        if (enable)
         {
-            corner = newCorner;
-            Generate();
-        }
+            playerPos = Camera.main.transform.position;
+            Vector3Int newCorner = CalcCorner();
+            if (corner != newCorner)
+            {
+                corner = newCorner;
+                Generate();
+            }
+        }   
     }
 
     private Vector3Int CalcCorner()
