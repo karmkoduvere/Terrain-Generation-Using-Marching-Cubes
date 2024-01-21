@@ -40,7 +40,6 @@ public class MarchingCubesGPU : MonoBehaviour
 
         GenerateNoisePoints(offset);
         SetupComputeShader(offset);
-
         // Add 4 LOD levels
         LOD[] lods = new LOD[4];
         for (int i = 0; i < lods.Length; i++)
@@ -54,6 +53,7 @@ public class MarchingCubesGPU : MonoBehaviour
         group.SetLODs(lods);
         group.RecalculateBounds();
         noisePointsBuffer?.Release();
+        TreeGenerator.Instance.GenerateTrees(offset, group);
     }
 
     public void GenerateChunk(int LOD, GameObject chunk)
@@ -88,6 +88,8 @@ public class MarchingCubesGPU : MonoBehaviour
         mesh.RecalculateNormals();
         chunk.GetComponent<MeshFilter>().mesh = mesh;
         chunk.GetComponent<MeshRenderer>().material = WorldGenerator.Instance.Material;
+        chunk.AddComponent<MeshCollider>();
+        chunk.GetComponent<MeshCollider>().sharedMesh = mesh;
 
         triangelVerticesBuffer?.Release();
         triangelsBuffer?.Release();

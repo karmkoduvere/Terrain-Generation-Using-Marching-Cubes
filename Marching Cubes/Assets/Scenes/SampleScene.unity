@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641258, b: 0.574817, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -123,6 +123,26 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &456886684 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8851554039414183036, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+  m_PrefabInstance: {fileID: 8763474631146268494}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &456886688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456886684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e64570adfe4c06847851adecb4f177b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TreePrefab: {fileID: 3797427656021500964, guid: 1df5be3fd29257a48bd45e761cdc7e00, type: 3}
+  TreeAmountPerChunk: 1
+  TreeSize: {x: 0.5, y: 0.5, z: 0.5}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -1140,7 +1160,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8851554039414183036, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 456886688}
   m_SourcePrefab: {fileID: 100100000, guid: b455716edf384574ca47b2494bd53eeb, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

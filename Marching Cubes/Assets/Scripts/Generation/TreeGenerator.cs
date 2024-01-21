@@ -25,12 +25,10 @@ public class TreeGenerator : MonoBehaviour
 
     public void GenerateTrees(Vector3 offset, LODGroup lod)
     {
-        if (enable)
+        if (enable && lod.GetLODs()[0].renderers[0].GetComponent<MeshFilter>().mesh.triangles.Length > 0)
         {
             int chunkSize = WorldGenerator.Instance.chunkSize;
-            Debug.Log(offset);
-            Vector3 position = new Vector3(offset.x * chunkSize + chunkSize / 2, offset.y + chunkSize, offset.z * chunkSize + chunkSize / 2);
-            //cube.GetComponent<BoxCollider>().scale;
+            Vector3 position = new Vector3(offset.x * chunkSize + chunkSize / 2, offset.y * chunkSize + chunkSize, offset.z * chunkSize + chunkSize / 2);
             for (int i = 0; i < TreeAmountPerChunk; i++)
             {
                 Vector3 randomPointInCube = RandomPointInBounds(position, chunkSize);
@@ -39,9 +37,11 @@ public class TreeGenerator : MonoBehaviour
                 tree.transform.localScale = TreeSize;
                 RaycastHit hitData;
                 Physics.Raycast(ray, out hitData);
-                if (hitData.point == Vector3.zero) Destroy(tree);
+                if (hitData.point == Vector3.zero || hitData.Equals(null) || hitData.point == randomPointInCube) Destroy(tree);
                 else
+                {
                     tree.transform.position = hitData.point;
+                }
             }
         }
     }
