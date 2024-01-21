@@ -22,19 +22,21 @@ float3 noiseOffset;
 int noiseGenerator;
 int offsetNoiseGenerator;
 
+bool generateEdges;
+
 RWStructuredBuffer<float> noisePoints;
 float3 offset;
 float3 worldSize;
 int chunkSize;
 
 uint Index(uint3 id);
-float SimplePerlinTerrain(uint3 id);
-float Simplex3D(uint3 id);
-float SimplexTerrain(uint3 id, float offsetNoise);
-float PerlinTerrain(uint3 id, float offsetNoise);
-float PerlinTerrain2(uint3 id, float offsetNoise);
-float OffsetNoise(uint3 id);
-float OffsetNoise2(uint3 pos);
+float SimplePerlinTerrain(int3 id);
+float Simplex3D(int3 id);
+float SimplexTerrain(int3 id, float offsetNoise);
+float PerlinTerrain(int3 id, float offsetNoise);
+float PerlinTerrain2(int3 id, float offsetNoise);
+float OffsetNoise(int3 id);
+float OffsetNoise2(int3 pos);
 
 [numthreads(4,4,4)]
 void CSMain (uint3 id : SV_DispatchThreadID)
@@ -44,14 +46,18 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         id.x > chunkSize || id.y > chunkSize || id.z > chunkSize)
         return;
     
-    if (id.z + offset.z == 0 || id.y + offset.y == 0 || id.x + offset.x == 0 ||
+    if (generateEdges)
+    {
+        if (id.z + offset.z == 0 || id.y + offset.y == 0 || id.x + offset.x == 0 ||
                         id.z + offset.z == worldSize.z * chunkSize ||
                         id.y + offset.y == worldSize.y * chunkSize ||
                         id.x + offset.x == worldSize.x * chunkSize)
-    {
-        noisePoints[Index(id)] = 0.0f;
-        return;
+        {
+            noisePoints[Index(id)] = 0.0f;
+            return;
+        }
     }
+    
     
     float noise = 1.0f;
     float offsetNoise = 0.0f;
@@ -80,7 +86,7 @@ uint Index(uint3 id)
     return id.x + id.y * size + id.z * pow(size, 2);
 }
 
-float SimplePerlinTerrain(uint3 pos)
+float SimplePerlinTerrain(int3 pos)
 {
     float ground = 10; // ground plane
     float frequency = noiseFrequency; // how quickly the noise varies over space
@@ -108,14 +114,14 @@ float SimplePerlinTerrain(uint3 pos)
     return finalVal;
 }
 
-float Simplex3D(uint3 id)
+float Simplex3D(int3 id)
 {
     float noise = (snoise(id * noiseFrequency + noiseOffset) * 2 - 1);
 
     return noise * noiseWeight;
 }
 
-float SimplexTerrain(uint3 pos, float offsetNoise)
+float SimplexTerrain(int3 pos, float offsetNoise)
 {
     float noise = 0;
 
@@ -145,7 +151,7 @@ float SimplexTerrain(uint3 pos, float offsetNoise)
     return finalVal;
 }
 
-float PerlinTerrain(uint3 pos, float offsetNoise)
+float PerlinTerrain(int3 pos, float offsetNoise)
 {
     float noise = 0;
 
@@ -175,7 +181,7 @@ float PerlinTerrain(uint3 pos, float offsetNoise)
     return finalVal;
 }
 
-float PerlinTerrain2(uint3 pos, float offsetNoise)
+float PerlinTerrain2(int3 pos, float offsetNoise)
 {
     float noise = 0;
 
@@ -201,7 +207,7 @@ float PerlinTerrain2(uint3 pos, float offsetNoise)
     return finalVal;
 }
 
-float OffsetNoise(uint3 pos)
+float OffsetNoise(int3 pos)
 {
     float noise = 0;
 
@@ -225,7 +231,7 @@ float OffsetNoise(uint3 pos)
     return noise * offsetWeight;
 }
 
-float OffsetNoise2(uint3 pos)
+float OffsetNoise2(int3 pos)
 {
     float noise = 0;
 

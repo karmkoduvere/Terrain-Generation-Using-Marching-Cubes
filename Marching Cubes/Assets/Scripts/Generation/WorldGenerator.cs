@@ -14,6 +14,9 @@ public class WorldGenerator : MonoBehaviour
 
     public Material Material;
 
+    public bool GenerateEdges = false;
+    public Vector3Int testGen;
+
     [Header("Noise")]
     public int Seed;
     [Tooltip("Samples of noise.")]
@@ -45,12 +48,24 @@ public class WorldGenerator : MonoBehaviour
 
     public void Start()
     {
-        Refresh();
+        //Refresh();
+    }
+
+    private void GenerateTest(int x, int y, int z)
+    {
+        MarchingCubesGPU chunk = Instantiate(
+                        ChunkGPUPrefab,
+                        new Vector3(x, y, z),
+                        Quaternion.identity
+                    );
+        chunk.name = $"Chunk_({x}, {y}, {z})";
+        chunk.Generate(new Vector3(x/chunkSize, y / chunkSize, z / chunkSize));
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.R)) Refresh();
+        else if (Input.GetKeyDown(KeyCode.E)) GenerateTest(testGen.x, testGen.y, testGen.z);
     }
 
 

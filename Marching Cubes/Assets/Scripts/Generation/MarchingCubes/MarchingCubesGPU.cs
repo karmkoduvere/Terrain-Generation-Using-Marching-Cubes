@@ -31,6 +31,7 @@ public class MarchingCubesGPU : MonoBehaviour
     private int[] triangleDataArray;
     private Color[] colorDataArray;
 
+
     public void Generate(Vector3 offset)
     {
         worldSize = WorldGenerator.Instance.WorldSize;
@@ -44,12 +45,7 @@ public class MarchingCubesGPU : MonoBehaviour
         LOD[] lods = new LOD[4];
         for (int i = 0; i < lods.Length; i++)
         {
-            GameObject chunkLOD = Instantiate(
-                ChunkLODPrefab,
-                new Vector3(offset.x * chunkSize, offset.y * chunkSize, offset.z * chunkSize),
-                Quaternion.identity,
-                transform
-            );
+            GameObject chunkLOD = Instantiate(ChunkLODPrefab,transform);
             chunkLOD.name = $"ChunkLOD_{i + 1}";
             GenerateChunk(i + 1, chunkLOD);
             lods[i] = new LOD(LODTrainsitionDistances[i], new Renderer[] { chunkLOD.GetComponent<MeshRenderer>() });
@@ -57,7 +53,7 @@ public class MarchingCubesGPU : MonoBehaviour
 
         group.SetLODs(lods);
         group.RecalculateBounds();
-        noisePointsBuffer.Release();
+        noisePointsBuffer?.Release();
     }
 
     public void GenerateChunk(int LOD, GameObject chunk)
@@ -93,13 +89,13 @@ public class MarchingCubesGPU : MonoBehaviour
         chunk.GetComponent<MeshFilter>().mesh = mesh;
         chunk.GetComponent<MeshRenderer>().material = WorldGenerator.Instance.Material;
 
-        triangelVerticesBuffer.Release();
-        triangelsBuffer.Release();
-        colorsBuffer.Release();
+        triangelVerticesBuffer?.Release();
+        triangelsBuffer?.Release();
+        colorsBuffer?.Release();
 
-        verticeMapBuffer.Release();
-        vertexCounterBuffer.Release();
-        triangleCounterBuffer.Release();
+        verticeMapBuffer?.Release();
+        vertexCounterBuffer?.Release();
+        triangleCounterBuffer?.Release();
     }
 
     private void GenerateNoisePoints(Vector3 offset)
@@ -128,6 +124,8 @@ public class MarchingCubesGPU : MonoBehaviour
         
         noiseShader.SetInt("noiseGenerator", (int)WorldGenerator.Instance.NoiseGenerator);
         noiseShader.SetInt("offsetNoiseGenerator", (int)WorldGenerator.Instance.OffsetNoiseGenerator);
+
+        noiseShader.SetBool("generateEdges", WorldGenerator.Instance.GenerateEdges);
         
         noiseShader.SetVector("noiseOffset", WorldGenerator.Instance.NoiseOffset);
 
@@ -196,15 +194,14 @@ public class MarchingCubesGPU : MonoBehaviour
 
     private void OnDestroy()
     {
-        
-        triangelVerticesBuffer.Release();
-        triangelsBuffer.Release();
-        colorsBuffer.Release();
+        triangelVerticesBuffer?.Release();
+        triangelsBuffer?.Release();
+        colorsBuffer?.Release();
 
-        verticeMapBuffer.Release();
-        vertexCounterBuffer.Release();
-        triangleCounterBuffer.Release();
+        verticeMapBuffer?.Release();
+        vertexCounterBuffer?.Release();
+        triangleCounterBuffer?.Release();
         
-        noisePointsBuffer.Release();
+        noisePointsBuffer?.Release();
     }
 }
