@@ -87,7 +87,7 @@ public class WorldGenerator : MonoBehaviour
 
     public void SetSeed()
     {
-        if (randomOffset)
+        if (!randomOffset)
         {
             Seed = initialSeed;
         }
@@ -106,7 +106,7 @@ public class WorldGenerator : MonoBehaviour
         NoiseOffset = new Vector3(Random.value * maxvalue, Random.value * maxvalue, Random.value * maxvalue);
     }
 
-    private bool randomOffset = false;
+    public bool randomOffset = false;
     public void ToggleRandomOffset()
     {
         randomOffset = !randomOffset;

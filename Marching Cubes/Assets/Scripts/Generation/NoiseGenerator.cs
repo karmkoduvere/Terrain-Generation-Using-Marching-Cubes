@@ -7,6 +7,7 @@ namespace DefaultNamespace
         SimplexTerrain = 2,
         PerlinTerrain = 3,
         PerlinTerrain2 = 4,
+        WorleyTerrain = 5,
 
         PerlinNoise3D = 10,
     }

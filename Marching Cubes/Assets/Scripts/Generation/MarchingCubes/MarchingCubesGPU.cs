@@ -128,6 +128,14 @@ public class MarchingCubesGPU : MonoBehaviour
         noiseShader.SetBool("generateEdges", WorldGenerator.Instance.GenerateEdges);
         
         noiseShader.SetVector("noiseOffset", WorldGenerator.Instance.NoiseOffset);
+        Vector3 cameraPos = Camera.main.transform.position;
+        Vector2 worleyPointsOffset = new Vector2(cameraPos.x, cameraPos.z);
+        noiseShader.SetMatrix("worleyClosestPoints;",  new Matrix4x4(new Vector2(10, 40) + worleyPointsOffset,
+            new Vector2(10f, -40) + worleyPointsOffset, new Vector4(), new Vector4()));
+        noiseShader.SetInts("worleyClosestBiomes", 1, 2);
+        noiseShader.SetFloats("worleyBiomeFreqs", 0.3f / 100f, 1.6f / 100f);
+        noiseShader.SetFloat("worleyBiomeStrength", 10.0f);
+
 
         noiseShader.Dispatch(0, chunkSize / 4 + 1, chunkSize / 4 + 1, chunkSize / 4 + 1);
     }
