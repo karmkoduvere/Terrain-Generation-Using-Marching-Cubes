@@ -1,5 +1,6 @@
 using DefaultNamespace;
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class MarchingCubesGPU : MonoBehaviour
@@ -30,7 +31,6 @@ public class MarchingCubesGPU : MonoBehaviour
     private Vector3[] vertexDataArray;
     private int[] triangleDataArray;
     private Color[] colorDataArray;
-
 
     public void Generate(Vector3 offset)
     {
@@ -139,6 +139,17 @@ public class MarchingCubesGPU : MonoBehaviour
         computeShader.SetInt("chunkSize", chunkSize);
         computeShader.SetVector("offset", offset * chunkSize);
         computeShader.SetVector("worldSize", worldSize * chunkSize);
+
+        computeShader.SetVector("color1", WorldGenerator.Instance.Color1);
+        computeShader.SetVector("color2", WorldGenerator.Instance.Color2);
+        computeShader.SetVector("color3", WorldGenerator.Instance.Color3);
+        computeShader.SetVector("color4", WorldGenerator.Instance.Color4);
+        computeShader.SetVector("color5", WorldGenerator.Instance.Color5);
+
+        computeShader.SetFloat("colorCutoff1", WorldGenerator.Instance.colorCutoff1);
+        computeShader.SetFloat("colorCutoff2", WorldGenerator.Instance.colorCutoff2);
+        computeShader.SetFloat("colorCutoff3", WorldGenerator.Instance.colorCutoff3);
+        computeShader.SetFloat("colorCutoff4", WorldGenerator.Instance.colorCutoff4);
     }
 
     private void SetupBuffers(int LOD)

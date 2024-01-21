@@ -11,11 +11,22 @@ public class WorldGenerator : MonoBehaviour
     public readonly int chunkSize = 24;
     public MarchingCubes ChunkPrefab;
     public MarchingCubesGPU ChunkGPUPrefab;
-
     public Material Material;
-
     public bool GenerateEdges = false;
     public Vector3Int testGen;
+
+    [Header("Color")]
+    public Color Color1 = Color.blue;
+    public Color Color2 = Color.yellow;
+    public Color Color3 = Color.green;
+    public Color Color4 = Color.gray;
+    public Color Color5 = Color.white;
+
+    public float colorCutoff1 = 0.2f;
+    public float colorCutoff2 = 0.4f;
+    public float colorCutoff3 = 0.6f;
+    public float colorCutoff4 = 0.7f;
+
 
     [Header("Noise")]
     public int Seed;
@@ -48,7 +59,7 @@ public class WorldGenerator : MonoBehaviour
 
     public void Start()
     {
-        //Refresh();
+        Refresh();
     }
 
     private void GenerateTest(int x, int y, int z)
