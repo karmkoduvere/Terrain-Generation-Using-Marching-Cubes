@@ -60,6 +60,13 @@ public class MenuPresenter : MonoBehaviour
             $"Generate random terrain toggle - F ({replacement})");
     }
 
+    public void UpdateGenerateTreesToggle(bool generateTrees)
+    {
+        string replacement = generateTrees ? "ON" : "OFF";
+        controlsText.text = Regex.Replace(controlsText.text, @"Generate trees toggle - T \(.*?\)",
+            $"Generate trees toggle - T ({replacement})");
+    }
+
     public void Exit()
     {
         Application.Quit();

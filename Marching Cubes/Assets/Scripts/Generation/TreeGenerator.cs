@@ -20,6 +20,7 @@ public class TreeGenerator : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.T))
         {
             enable = !enable;
+            MenuPresenter.Instance.UpdateGenerateTreesToggle(enable);
         }
     }
 
