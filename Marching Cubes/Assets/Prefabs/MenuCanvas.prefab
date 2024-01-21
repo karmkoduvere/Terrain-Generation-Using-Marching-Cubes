@@ -69,11 +69,13 @@ MonoBehaviour:
 
     Refresh generation - R
 
+    Generate random
+    terrain toggle - F (OFF)
+
 
     Movement - WASD
 
-    Up
-    - Space
+    Up - Space
 
     Down - Ctrl'
   m_isRightToLeft: 0
@@ -395,6 +397,7 @@ MonoBehaviour:
   NoiseSelectorPrefab: {fileID: 905222594559672485, guid: 28c085eb857fc1647a94e8f2173c0832, type: 3}
   Menu: {fileID: 9137103460102045328}
   Grid: {fileID: 3496336626187290192}
+  controlsText: {fileID: 7139505788261246214}
   NoiseGenerators:
   - {fileID: 11400000, guid: 66baaa478ec8daf4fac190dfcab2a134, type: 2}
   - {fileID: 11400000, guid: ed298c9898a7382429ee966363dda1fe, type: 2}

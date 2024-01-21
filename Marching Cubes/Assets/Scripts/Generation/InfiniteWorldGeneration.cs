@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class InfiniteWorldGeneration : MonoBehaviour
 {
+    public static InfiniteWorldGeneration Instance;
+    
     public bool enable = false;
     public Vector3Int size;
 
@@ -15,6 +17,7 @@ public class InfiniteWorldGeneration : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
         chunkMap = new();
         chunks = new("ChunksGPU");
         chunks.transform.parent = transform;
@@ -30,10 +33,26 @@ public class InfiniteWorldGeneration : MonoBehaviour
         if (enable) Generate();
     }
 
+    public void Refresh()
+    {
+        WorldGenerator.Instance.SetSeed();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Destroy(transform.GetChild(i).gameObject);
+        }
+        Awake();
+        Start();
+    }
+
     void Update()
     {
         if (enable)
         {
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                Refresh();
+                return;
+            }
             playerPos = Camera.main.transform.position;
             Vector3Int newCorner = CalcCorner();
             if (corner != newCorner)
