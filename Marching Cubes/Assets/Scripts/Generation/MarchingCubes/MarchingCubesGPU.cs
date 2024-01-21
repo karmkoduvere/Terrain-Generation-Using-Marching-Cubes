@@ -127,7 +127,7 @@ public class MarchingCubesGPU : MonoBehaviour
         noiseShader.SetInt("noiseGenerator", (int)WorldGenerator.Instance.NoiseGenerator);
         noiseShader.SetInt("offsetNoiseGenerator", (int)WorldGenerator.Instance.OffsetNoiseGenerator);
 
-        noiseShader.SetBool("generateEdges", WorldGenerator.Instance.GenerateEdges);
+        noiseShader.SetBool("generateEdges", !WorldGenerator.Instance.GenerateInfinite);
         
         noiseShader.SetVector("noiseOffset", WorldGenerator.Instance.NoiseOffset);
         Vector3 cameraPos = Camera.main.transform.position;

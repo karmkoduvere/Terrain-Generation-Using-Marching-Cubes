@@ -4,8 +4,6 @@ using UnityEngine;
 public class InfiniteWorldGeneration : MonoBehaviour
 {
     public static InfiniteWorldGeneration Instance;
-    
-    public bool enable = false;
     public Vector3Int size;
 
     private Vector3 playerPos;
@@ -27,40 +25,27 @@ public class InfiniteWorldGeneration : MonoBehaviour
     {
         chunkSize = WorldGenerator.Instance.chunkSize;
         ChunkGPUPrefab = WorldGenerator.Instance.ChunkGPUPrefab;
-        WorldGenerator.Instance.GenerateEdges = false;
         playerPos = Camera.main.transform.position;
         corner = CalcCorner();
-        if (enable) Generate();
     }
 
     public void Refresh()
     {
-        WorldGenerator.Instance.SetSeed();
-        for (int i = 0; i < transform.childCount; i++)
-        {
-            Destroy(transform.GetChild(i).gameObject);
-        }
         Awake();
         Start();
+        Generate();
     }
 
-    void Update()
+    public void InfiniteWorldGenerate()
     {
-        if (enable)
+        playerPos = Camera.main.transform.position;
+        Vector3Int newCorner = CalcCorner();
+
+        if (corner != newCorner)
         {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                Refresh();
-                return;
-            }
-            playerPos = Camera.main.transform.position;
-            Vector3Int newCorner = CalcCorner();
-            if (corner != newCorner)
-            {
-                corner = newCorner;
-                Generate();
-            }
-        }   
+            corner = newCorner;
+            Generate();
+        }
     }
 
     private Vector3Int CalcCorner()
@@ -74,7 +59,7 @@ public class InfiniteWorldGeneration : MonoBehaviour
         return new Vector3Int(x, 0, z);
     }
 
-    void Generate()
+    private void Generate()
     {
         for (int z = 0; z < size.z; z++)
         {

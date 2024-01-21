@@ -1,3 +1,4 @@
+/*
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 #include "Tables.compute"
@@ -51,16 +52,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     for (int el = 0; cube[el] != -1; el += 3)
     {
         Triangle t;
-        /* // Sharp edge version
-        t.vertex3 = (id + cubeEdgeOffset[cube[el]]) * LOD;
-        t.vertex2 = (id + cubeEdgeOffset[cube[el + 1]]) * LOD;
-        t.vertex1 = (id + cubeEdgeOffset[cube[el + 2]]) * LOD;
-        */
-        ///*
+
         t.vertex3 = CalcVertexPos(id, cube[el]);
         t.vertex2 = CalcVertexPos(id, cube[el + 1]);
         t.vertex1 = CalcVertexPos(id, cube[el + 2]);
-        //*/
+        //
         
         //t.color1 = CalcColor(t.vertex1);
         t.color1 = CalcColor(t.vertex1);
@@ -99,4 +95,4 @@ float3 CalcVertexPos(uint3 coords, int n)
         return float3(0, 0, 0);
     
     return pointA + pos * (pointB - pointA);
-}
+}*/

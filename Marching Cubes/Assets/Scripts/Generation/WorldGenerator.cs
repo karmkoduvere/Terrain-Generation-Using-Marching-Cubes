@@ -1,5 +1,6 @@
 using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class WorldGenerator : MonoBehaviour
 {
@@ -11,8 +12,8 @@ public class WorldGenerator : MonoBehaviour
     public MarchingCubes ChunkPrefab;
     public MarchingCubesGPU ChunkGPUPrefab;
     public Material Material;
-    public bool GenerateEdges = false;
-    public Vector3Int testGen;
+    public bool GenerateInfinite = false;
+    public bool randomOffset = false;
 
     [Header("Color")]
     public Color Color1 = Color.blue;
@@ -63,17 +64,7 @@ public class WorldGenerator : MonoBehaviour
     {
         SetSeed();
         MenuPresenter.Instance.UpdateOffsetToggleText(randomOffset);
-    }
-
-    private void GenerateTest(int x, int y, int z)
-    {
-        MarchingCubesGPU chunk = Instantiate(
-                        ChunkGPUPrefab,
-                        new Vector3(x, y, z),
-                        Quaternion.identity
-                    );
-        chunk.name = $"Chunk_({x}, {y}, {z})";
-        chunk.Generate(new Vector3(x/chunkSize, y / chunkSize, z / chunkSize));
+        Refresh();
     }
 
     private void Update()
@@ -82,6 +73,31 @@ public class WorldGenerator : MonoBehaviour
         {
             ToggleRandomOffset();
             SetSeed();
+        } else if (Input.GetKeyDown(KeyCode.R))
+        {
+            Refresh();
+        } else if (Input.GetKeyDown(KeyCode.G))
+        {
+            GenerateInfinite = !GenerateInfinite;
+            Refresh();
+        }
+
+        if (GenerateInfinite) InfiniteWorldGeneration.Instance.InfiniteWorldGenerate();
+    }
+
+    public void Refresh()
+    {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Destroy(transform.GetChild(i).gameObject);
+        }
+        if (GenerateInfinite)
+        {
+            InfiniteWorldGeneration.Instance.Refresh();
+        }
+        else
+        {
+            GenerateOnGPU();
         }
     }
 
@@ -106,7 +122,6 @@ public class WorldGenerator : MonoBehaviour
         NoiseOffset = new Vector3(Random.value * maxvalue, Random.value * maxvalue, Random.value * maxvalue);
     }
 
-    public bool randomOffset = false;
     public void ToggleRandomOffset()
     {
         randomOffset = !randomOffset;
@@ -136,7 +151,7 @@ public class WorldGenerator : MonoBehaviour
             }
         }
         return chunks;
-    }
+    }*/
 
     GameObject GenerateOnGPU()
     {
@@ -161,5 +176,5 @@ public class WorldGenerator : MonoBehaviour
             }
         }
         return chunks;
-    }*/
+    }
 }
