@@ -30,7 +30,7 @@ public class MarchingCubes : MonoBehaviour
         material = WorldGenerator.Instance.Material;
         group = gameObject.GetComponent<LODGroup>();
 
-        CreateNoisePoints(offset);
+        noisePoints = CreateNoisePoints(offset);
 
         // Add 4 LOD levels
         LOD[] lods = new LOD[4];
@@ -62,6 +62,7 @@ public class MarchingCubes : MonoBehaviour
             {
                 for (int x = 0; x < chunkSize; x += LOD)
                 {
+                    print(noisePoints[x, y, z]);
                     int index = GetTriangleIndex(new Vector3Int(x, y, z), LOD);
                     foreach (int el in Tables.TriangleTable[index])
                     {
@@ -74,7 +75,7 @@ public class MarchingCubes : MonoBehaviour
                             if (Mark) Instantiate(Marker, new Vector3(x, y, z) + Tables.cubeEdgeOffset[el] * LOD, Quaternion.identity, chunk.transform);
 
                             newVertices.Add(new Vector3(x, y, z) + CalcVertexPos(new Vector3Int(x,y,z), el,LOD)*LOD);
-                            //newVertices.Add(new Vector3(x, y, z) + cubeEdgeOffset[el]*LOD); // Sharp edge version
+                            //newVertices.Add(new Vector3(x, y, z) + Tables.cubeEdgeOffset[el]*LOD); // Sharp edge version
                             verticeMap[vertex] = step++;
                             float colorValueX = (vertex.x + chunkSize * offset.x) / (worldSize.x * chunkSize);
                             float colorValueY = (vertex.y + chunkSize * offset.y) / (worldSize.y * chunkSize);
@@ -148,7 +149,7 @@ public class MarchingCubes : MonoBehaviour
         Vector3Int pointA = coords + Tables.vertices[Tables.edgeVertexIndices[n][0]] * LOD;
         Vector3Int pointB = coords + Tables.vertices[Tables.edgeVertexIndices[n][1]] * LOD;
 
-        float pos = - noisePoints[pointA.z,pointA.y,pointA.x] /
+        float pos = (0.47f - noisePoints[pointA.z,pointA.y,pointA.x]) /
             (noisePoints[pointB.z, pointB.y, pointB.x] - noisePoints[pointA.z,pointA.y,pointA.x]);
 
         return n switch
@@ -167,7 +168,7 @@ public class MarchingCubes : MonoBehaviour
         for (int i = 0; i < 8; i++)
         {
             Vector3Int coord = coords + Tables.vertices[i] * LOD;
-            if (!(noisePoints[coord.z, coord.y, coord.x] < 0))
+            if (!(noisePoints[coord.z, coord.y, coord.x] < 0.47f))
                 index |= (1 << i);
         }
         return index;
